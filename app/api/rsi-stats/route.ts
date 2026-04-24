@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 type TimeframeKey = "15m" | "1h" | "4h" | "12h" | "24h" | "1w";
 
 type RsiRow = {
@@ -11,7 +13,9 @@ type RsiRow = {
   rsi: Record<TimeframeKey, number | null>;
 };
 
-const TIMEFRAME_TO_BINANCE: Record<TimeframeKey, string> = {
+const TIMEFRAMES: TimeframeKey[] = ["15m", "1h", "4h", "12h", "24h", "1w"];
+
+const BINANCE_INTERVALS: Record<TimeframeKey, string> = {
   "15m": "15m",
   "1h": "1h",
   "4h": "4h",
@@ -43,35 +47,6 @@ function getLogoUrl(symbol: string) {
   return `https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/${symbol.toLowerCase()}.png`;
 }
 
-function toNumber(value: unknown): number | null {
-  const num = Number(value);
-  return Number.isFinite(num) ? num : null;
-}
-
-async function fetchKlines(pair: string, interval: string, limit = 120) {
-  const res = await fetch(
-    `https://api.binance.com/api/v3/klines?symbol=${pair}&interval=${interval}&limit=${limit}`,
-    { cache: "no-store" }
-  );
-
-  if (!res.ok) {
-    throw new Error(`Binance error for ${pair} ${interval}`);
-  }
-
-  const data = (await res.json()) as unknown[];
-
-  return Array.isArray(data) ? data : [];
-}
-
-function extractCloses(klines: unknown[]) {
-  return klines
-    .map((row) => {
-      if (!Array.isArray(row)) return null;
-      return toNumber(row[4]);
-    })
-    .filter((value): value is number => value !== null);
-}
-
 function calculateRsi(closes: number[], period = 14): number | null {
   if (closes.length < period + 1) return null;
 
@@ -99,28 +74,130 @@ function calculateRsi(closes: number[], period = 14): number | null {
   if (avgLoss === 0) return 100;
 
   const rs = avgGain / avgLoss;
-  const rsi = 100 - 100 / (1 + rs);
+  return Number((100 - 100 / (1 + rs)).toFixed(1));
+}
 
-  return Number(rsi.toFixed(1));
+async function fetchWithTimeout(url: string, timeoutMs = 9000) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(url, {
+      cache: "no-store",
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "Mozilla/5.0 StockApp RSI",
+        Accept: "application/json",
+      },
+    });
+
+    return res;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function fetchBinanceCloses(pair: string, timeframe: TimeframeKey) {
+  const interval = BINANCE_INTERVALS[timeframe];
+
+  const url = `https://api.binance.com/api/v3/klines?symbol=${pair}&interval=${interval}&limit=120`;
+
+  const res = await fetchWithTimeout(url);
+
+  if (!res.ok) {
+    throw new Error(`Binance failed ${pair} ${timeframe}`);
+  }
+
+  const data = await res.json();
+
+  if (!Array.isArray(data)) {
+    throw new Error(`Invalid Binance response ${pair}`);
+  }
+
+  return data
+    .map((row) => {
+      if (!Array.isArray(row)) return null;
+      const value = Number(row[4]);
+      return Number.isFinite(value) ? value : null;
+    })
+    .filter((value): value is number => value !== null);
+}
+
+function getCryptoCompareEndpoint(symbol: string, timeframe: TimeframeKey) {
+  const base = "https://min-api.cryptocompare.com/data";
+
+  if (timeframe === "15m") {
+    return `${base}/v2/histominute?fsym=${symbol}&tsym=USDT&limit=120&aggregate=15`;
+  }
+
+  if (timeframe === "1h") {
+    return `${base}/v2/histohour?fsym=${symbol}&tsym=USDT&limit=120&aggregate=1`;
+  }
+
+  if (timeframe === "4h") {
+    return `${base}/v2/histohour?fsym=${symbol}&tsym=USDT&limit=120&aggregate=4`;
+  }
+
+  if (timeframe === "12h") {
+    return `${base}/v2/histohour?fsym=${symbol}&tsym=USDT&limit=120&aggregate=12`;
+  }
+
+  if (timeframe === "24h") {
+    return `${base}/v2/histoday?fsym=${symbol}&tsym=USDT&limit=120&aggregate=1`;
+  }
+
+  return `${base}/v2/histoday?fsym=${symbol}&tsym=USDT&limit=120&aggregate=7`;
+}
+
+async function fetchCryptoCompareCloses(symbol: string, timeframe: TimeframeKey) {
+  const url = getCryptoCompareEndpoint(symbol, timeframe);
+
+  const res = await fetchWithTimeout(url);
+
+  if (!res.ok) {
+    throw new Error(`CryptoCompare failed ${symbol} ${timeframe}`);
+  }
+
+  const data = await res.json();
+
+  const rows = data?.Data?.Data;
+
+  if (!Array.isArray(rows)) {
+    throw new Error(`Invalid CryptoCompare response ${symbol}`);
+  }
+
+  return rows
+    .map((row) => {
+      const value = Number(row?.close);
+      return Number.isFinite(value) ? value : null;
+    })
+    .filter((value): value is number => value !== null);
+}
+
+async function fetchCloses(symbol: string, pair: string, timeframe: TimeframeKey) {
+  try {
+    return await fetchBinanceCloses(pair, timeframe);
+  } catch {
+    return await fetchCryptoCompareCloses(symbol, timeframe);
+  }
 }
 
 async function buildRow(coin: (typeof COINS)[number]): Promise<RsiRow> {
-  const timeframeEntries = await Promise.all(
-    (Object.keys(TIMEFRAME_TO_BINANCE) as TimeframeKey[]).map(async (tf) => {
+  const results = await Promise.all(
+    TIMEFRAMES.map(async (timeframe) => {
       try {
-        const klines = await fetchKlines(coin.pair, TIMEFRAME_TO_BINANCE[tf], 120);
-        const closes = extractCloses(klines);
+        const closes = await fetchCloses(coin.symbol, coin.pair, timeframe);
         const rsi = calculateRsi(closes, 14);
         const lastPrice = closes.length ? closes[closes.length - 1] : null;
 
         return {
-          timeframe: tf,
+          timeframe,
           rsi,
           lastPrice,
         };
       } catch {
         return {
-          timeframe: tf,
+          timeframe,
           rsi: null,
           lastPrice: null,
         };
@@ -128,16 +205,15 @@ async function buildRow(coin: (typeof COINS)[number]): Promise<RsiRow> {
     })
   );
 
-  const rsiMap = timeframeEntries.reduce(
-    (acc, entry) => {
-      acc[entry.timeframe] = entry.rsi;
-      return acc;
-    },
-    {} as Record<TimeframeKey, number | null>
-  );
+  const rsi = results.reduce((acc, item) => {
+    acc[item.timeframe] = item.rsi;
+    return acc;
+  }, {} as Record<TimeframeKey, number | null>);
 
   const price =
-    timeframeEntries.find((entry) => entry.timeframe === "15m")?.lastPrice ?? null;
+    results.find((item) => item.timeframe === "15m")?.lastPrice ??
+    results.find((item) => item.lastPrice !== null)?.lastPrice ??
+    null;
 
   return {
     symbol: coin.symbol,
@@ -145,7 +221,7 @@ async function buildRow(coin: (typeof COINS)[number]): Promise<RsiRow> {
     pair: coin.pair,
     logoUrl: getLogoUrl(coin.symbol),
     price,
-    rsi: rsiMap,
+    rsi,
   };
 }
 
@@ -157,7 +233,7 @@ export async function GET() {
       rows,
       updatedAt: new Date().toISOString(),
     });
-  } catch (error: unknown) {
+  } catch (error) {
     const message =
       error instanceof Error ? error.message : "Грешка при RSI данните.";
 
