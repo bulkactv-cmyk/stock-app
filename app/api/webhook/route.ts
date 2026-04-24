@@ -29,11 +29,15 @@ async function getCustomerEmail(customerId: string | null | undefined) {
 
   const customer = await stripe.customers.retrieve(customerId);
 
-  if (customer.deleted === true) {
+  if ("deleted" in customer && customer.deleted === true) {
     return null;
   }
 
-  return customer.email || null;
+  if ("email" in customer) {
+    return customer.email || null;
+  }
+
+  return null;
 }
 
 export async function POST(req: Request) {
@@ -78,12 +82,20 @@ export async function POST(req: Request) {
       const priceId = fullSession.line_items?.data?.[0]?.price?.id || null;
       const plan = priceId ? PRICE_TO_PLAN[priceId] : null;
 
-      const email =
-        fullSession.customer_details?.email ||
-        fullSession.customer_email ||
-        (typeof fullSession.customer === "string"
-          ? await getCustomerEmail(fullSession.customer)
-          : fullSession.customer?.email || null);
+      let email: string | null = null;
+
+      if (fullSession.customer_details?.email) {
+        email = fullSession.customer_details.email;
+      } else if (fullSession.customer_email) {
+        email = fullSession.customer_email;
+      } else if (typeof fullSession.customer === "string") {
+        email = await getCustomerEmail(fullSession.customer);
+      } else if (
+        fullSession.customer &&
+        "email" in fullSession.customer
+      ) {
+        email = fullSession.customer.email || null;
+      }
 
       console.log("CHECKOUT SESSION:", {
         sessionId: session.id,
