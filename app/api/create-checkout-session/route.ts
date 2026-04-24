@@ -4,38 +4,46 @@ import { stripe } from "../../../lib/stripe";
 const appUrl = process.env.NEXT_PUBLIC_APP_URL;
 
 if (!appUrl) {
-  throw new Error("Липсва NEXT_PUBLIC_APP_URL в environment variables");
+  throw new Error("Missing NEXT_PUBLIC_APP_URL in environment variables");
 }
 
-const PRICE_IDS: Record<string, string> = {
-  basic: "price_1TOybBQ392LlwhIsgpgzoYN1",
-  pro: "price_1TOgK5Q392LlwhIs82KhiJLI",
-  unlimited: "price_1TOcuRQ392LlwhIspEnHjxhg",
+const PRICE_IDS: Record<"basic" | "pro" | "unlimited", string> = {
+  basic: "price_1TPlmj9bv613l0cODWDSH8ka",
+  pro: "price_1TPlnR9bv613l0cOtOEeMEAo",
+  unlimited: "price_1TPlnq9bv613l0cO5lm1X2qG",
 };
+
+type PlanType = keyof typeof PRICE_IDS;
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const plan =
-      typeof body?.plan === "string" ? body.plan.trim().toLowerCase() : "";
-    const email =
-      typeof body?.email === "string" ? body.email.trim() : "";
 
-    if (!plan || !PRICE_IDS[plan]) {
+    const plan =
+      typeof body?.plan === "string"
+        ? body.plan.trim().toLowerCase()
+        : "";
+
+    const email =
+      typeof body?.email === "string"
+        ? body.email.trim().toLowerCase()
+        : "";
+
+    if (!plan || !(plan in PRICE_IDS)) {
       return NextResponse.json(
-        { error: "Невалиден план." },
+        { error: "Invalid subscription plan." },
         { status: 400 }
       );
     }
 
     if (!email) {
       return NextResponse.json(
-        { error: "Липсва имейл." },
+        { error: "Missing customer email." },
         { status: 400 }
       );
     }
 
-    const priceId = PRICE_IDS[plan];
+    const priceId = PRICE_IDS[plan as PlanType];
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
@@ -57,19 +65,18 @@ export async function POST(req: Request) {
 
     if (!session.url) {
       return NextResponse.json(
-        { error: "Stripe не върна checkout URL." },
+        { error: "Stripe did not return checkout URL." },
         { status: 500 }
       );
     }
 
     return NextResponse.json({ url: session.url });
-  } catch (error: any) {
-    console.error("STRIPE ERROR MESSAGE:", error?.message);
-    console.error("STRIPE FULL ERROR:", error);
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Stripe checkout error.";
 
-    return NextResponse.json(
-      { error: error?.message || "Stripe error" },
-      { status: 500 }
-    );
+    console.error("STRIPE CHECKOUT ERROR:", error);
+
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
