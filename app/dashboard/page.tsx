@@ -129,56 +129,56 @@ const NEWS_ITEMS: NewsItem[] = [
   {
     category: "market",
     tag: "Macro",
-    source: "MarketWatch / Google News",
-    title: "Пазарни новини: индекси, облигации, долар и Фед",
+    source: "MarketWatch",
+    title: "Markets: indexes, bonds, dollar and central banks",
     summary:
-      "Следи най-важните движения при S&P 500, Nasdaq, доходността по облигации, долара и очакванията за лихвите.",
-    url: "https://news.google.com/search?q=stock%20market%20S%26P%20500%20Nasdaq%20Fed%20inflation",
+      "Live market coverage for S&P 500, Nasdaq, bond yields, the dollar and interest-rate expectations.",
+    url: "https://www.marketwatch.com/markets",
   },
   {
     category: "market",
     tag: "Indexes",
-    source: "Reuters / Google News",
-    title: "Глобални пазари: Европа, САЩ и Азия",
+    source: "Reuters",
+    title: "Global markets: Europe, United States and Asia",
     summary:
-      "Бърз поток от новини за водещите борси, risk-on/risk-off настроения и макро катализатори.",
-    url: "https://news.google.com/search?q=global%20markets%20stocks%20Europe%20Asia%20US",
+      "Direct access to global market coverage, risk-on/risk-off sentiment and major macro catalysts.",
+    url: "https://www.reuters.com/markets/",
   },
   {
     category: "company",
     tag: "AI Stocks",
-    source: "Companies / Google News",
-    title: "Новини за водещи компании: Nvidia, Apple, Tesla, Microsoft",
+    source: "Yahoo Finance",
+    title: "Company news: Nvidia, Apple, Tesla, Microsoft",
     summary:
-      "Следи earnings, AI инвестиции, guidance, margins и нови продукти при най-гледаните компании.",
-    url: "https://news.google.com/search?q=Nvidia%20Apple%20Tesla%20Microsoft%20earnings%20AI%20stocks",
+      "Track earnings, AI investments, guidance, margins and product updates from the most-watched companies.",
+    url: "https://finance.yahoo.com/topic/stock-market-news/",
   },
   {
     category: "company",
     tag: "Earnings",
-    source: "Earnings / Google News",
-    title: "Earnings сезон: приходи, EPS, маржове и прогнози",
+    source: "Investing.com",
+    title: "Earnings season: revenue, EPS, margins and guidance",
     summary:
-      "Новини около отчетите на компаниите и реакции на пазара след публикуване на резултати.",
-    url: "https://news.google.com/search?q=earnings%20revenue%20EPS%20guidance%20stocks",
+      "Follow company earnings reports and market reactions after results are published.",
+    url: "https://www.investing.com/earnings-calendar/",
   },
   {
     category: "crypto",
     tag: "Bitcoin",
-    source: "Crypto / Google News",
-    title: "Крипто новини: Bitcoin, Ethereum, ETF и регулации",
+    source: "CoinDesk",
+    title: "Crypto news: Bitcoin, Ethereum, ETFs and regulation",
     summary:
-      "Следи spot ETF потоци, регулации, институционално търсене и ключови движения при BTC и ETH.",
-    url: "https://news.google.com/search?q=Bitcoin%20Ethereum%20ETF%20crypto%20regulation",
+      "Follow spot ETF flows, regulation, institutional demand and major moves in BTC and ETH.",
+    url: "https://www.coindesk.com/",
   },
   {
     category: "crypto",
     tag: "Altcoins",
-    source: "Crypto / Google News",
-    title: "Алткойни и крипто пазар: Solana, BNB, XRP, Chainlink",
+    source: "CoinDesk",
+    title: "Altcoins and crypto market: Solana, BNB, XRP, Chainlink",
     summary:
-      "Новини за ликвидност, on-chain активност, екосистеми, DeFi и големи движения при алткойните.",
-    url: "https://news.google.com/search?q=Solana%20BNB%20XRP%20Chainlink%20altcoins%20crypto",
+      "Track liquidity, on-chain activity, ecosystems, DeFi and major altcoin moves.",
+    url: "https://www.coindesk.com/markets/",
   },
 ];
 
@@ -220,7 +220,7 @@ const KNOWN_CRYPTO_SYMBOLS = new Set([
 ]);
 
 function formatLargeNumber(value: number | null | undefined) {
-  if (value === null || value === undefined || Number.isNaN(value)) return "Няма данни";
+  if (value === null || value === undefined || Number.isNaN(value)) return "No data";
   if (value >= 1_000_000_000_000) return `${(value / 1_000_000_000_000).toFixed(2)}T`;
   if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(2)}B`;
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(2)}M`;
@@ -228,17 +228,17 @@ function formatLargeNumber(value: number | null | undefined) {
 }
 
 function formatNumber(value: number | null | undefined) {
-  if (value === null || value === undefined || Number.isNaN(value)) return "Няма данни";
+  if (value === null || value === undefined || Number.isNaN(value)) return "No data";
   return value.toFixed(2);
 }
 
 function formatPercent(value: number | null | undefined) {
-  if (value === null || value === undefined || Number.isNaN(value)) return "Няма данни";
+  if (value === null || value === undefined || Number.isNaN(value)) return "No data";
   return `${(value * 100).toFixed(2)}%`;
 }
 
 function safeText(value?: string | null) {
-  if (!value || !value.trim()) return "Няма данни";
+  if (!value || !value.trim()) return "No data";
   return value;
 }
 
@@ -512,15 +512,15 @@ function MarketOverviewCard({
       </div>
 
       <div style={styles.marketHeaderRow}>
-        <div style={{ ...styles.marketHeaderCell, flex: 1.8 }}>Символ</div>
+        <div style={{ ...styles.marketHeaderCell, flex: 1.8 }}>Symbol</div>
         <div style={{ ...styles.marketHeaderCell, width: "82px", textAlign: "center" }}>
-          Тренд
+          Trend
         </div>
         <div style={{ ...styles.marketHeaderCell, flex: 1, textAlign: "right" }}>
-          Цена
+          Price
         </div>
         <div style={{ ...styles.marketHeaderCell, flex: 1, textAlign: "right" }}>
-          {type === "stocks" ? "Промяна" : "24ч"}
+          {type === "stocks" ? "Change" : "24h"}
         </div>
       </div>
 
@@ -538,7 +538,7 @@ function MarketOverviewCard({
                 ...styles.marketRowButton,
                 ...(disabled ? styles.marketRowButtonDisabled : {}),
               }}
-              title={`Анализирай ${item.symbol}`}
+              title={`Analyze ${item.symbol}`}
             >
               <div style={styles.marketRow}>
                 <div style={styles.marketSymbolCell}>
@@ -605,7 +605,7 @@ function WatchlistCard({
 
       {items.length === 0 ? (
         <div style={styles.watchlistEmpty}>
-          Добави актив в любими и тук ще се появи списъкът ти.
+          Add an asset to your watchlist and it will appear here.
         </div>
       ) : (
         <div style={styles.watchlistList}>
@@ -623,7 +623,7 @@ function WatchlistCard({
                   onClick={() => onSelectSymbol(item.symbol)}
                   disabled={disabled}
                   style={styles.watchlistMainButton}
-                  title={`Анализирай ${item.symbol}`}
+                  title={`Analyze ${item.symbol}`}
                 >
                   <div style={styles.watchlistTop}>
                     <div style={styles.watchlistIdentity}>
@@ -667,14 +667,14 @@ function WatchlistCard({
                         : styles.watchTypeStock),
                     }}
                   >
-                    {item.assetType === "crypto" ? "Крипто" : "Акция"}
+                    {item.assetType === "crypto" ? "Crypto" : "Stock"}
                   </span>
 
                   <button
                     type="button"
                     onClick={() => onRemove(item.symbol)}
                     style={styles.watchlistRemoveButton}
-                    title={`Премахни ${item.symbol}`}
+                    title={`Remove ${item.symbol}`}
                   >
                     ×
                   </button>
@@ -728,7 +728,7 @@ function AlertsCard({
         <input
           value={formSymbol}
           onChange={(e) => setFormSymbol(e.target.value.toUpperCase())}
-          placeholder="Символ"
+          placeholder="Symbol"
           style={styles.alertInput}
         />
 
@@ -737,8 +737,8 @@ function AlertsCard({
           onChange={(e) => setFormAssetType(e.target.value as AssetType)}
           style={styles.alertSelect}
         >
-          <option value="stock">Акция</option>
-          <option value="crypto">Крипто</option>
+          <option value="stock">Stock</option>
+          <option value="crypto">Crypto</option>
         </select>
 
         <select
@@ -746,14 +746,14 @@ function AlertsCard({
           onChange={(e) => setFormConditionType(e.target.value as AlertConditionType)}
           style={styles.alertSelect}
         >
-          <option value="above">Над цена</option>
-          <option value="below">Под цена</option>
+          <option value="above">Above price</option>
+          <option value="below">Below price</option>
         </select>
 
         <input
           value={formTargetPrice}
           onChange={(e) => setFormTargetPrice(e.target.value)}
-          placeholder="Целева цена"
+          placeholder="Target price"
           type="number"
           step="0.0001"
           style={styles.alertInput}
@@ -765,13 +765,13 @@ function AlertsCard({
           style={styles.createAlertButton}
           disabled={disabled}
         >
-          Създай alert
+          Create alert
         </button>
       </div>
 
       {alerts.length === 0 ? (
         <div style={styles.watchlistEmpty}>
-          Все още нямаш alert-и. Създай първия си ценови trigger.
+          You do not have alerts yet. Create your first price trigger.
         </div>
       ) : (
         <div style={styles.alertsList}>
@@ -802,13 +802,13 @@ function AlertsCard({
                         : styles.alertStatusPending),
                     }}
                   >
-                    {triggered ? "Задействан" : "Активен"}
+                    {triggered ? "Triggered" : "Assetен"}
                   </div>
                 </div>
 
                 <div style={styles.alertRowBottom}>
                   <div style={styles.alertCurrentPrice}>
-                    Текуща цена: {formatMarketPrice(currentPrice)}
+                    Current price: {formatMarketPrice(currentPrice)}
                   </div>
 
                   <div style={styles.alertActions}>
@@ -820,14 +820,14 @@ function AlertsCard({
                           : styles.watchTypeStock),
                       }}
                     >
-                      {alert.assetType === "crypto" ? "Крипто" : "Акция"}
+                      {alert.assetType === "crypto" ? "Crypto" : "Stock"}
                     </span>
 
                     <button
                       type="button"
                       onClick={() => onDeleteAlert(alert.id)}
                       style={styles.watchlistRemoveButton}
-                      title="Изтрий alert"
+                      title="Delete alert"
                     >
                       ×
                     </button>
@@ -851,13 +851,12 @@ function AlertsLockedCard() {
       </div>
 
       <div style={styles.lockedCardText}>
-        Функцията Alerts е достъпна само за плановете <strong>PRO</strong> и{" "}
+        The Alerts feature is available only for <strong>PRO</strong> and{" "}
         <strong>UNLIMITED</strong>.
       </div>
 
       <div style={styles.lockedCardSubtext}>
-        Ъпгрейдни плана си, за да създаваш ценови alert-и и да следиш кога даден актив
-        достига зададена цена.
+        Upgrade your plan to create price alerts and track when an asset reaches a target price.
       </div>
     </div>
   );
@@ -917,7 +916,7 @@ function NewsSection({
             <div style={styles.newsTitle}>{item.title}</div>
             <div style={styles.newsSummary}>{item.summary}</div>
 
-            <div style={styles.newsOpenText}>Отвори актуалната емисия →</div>
+            <div style={styles.newsOpenText}>Open live source →</div>
           </a>
         ))}
       </div>
@@ -931,31 +930,31 @@ function DashboardNewsHome() {
       <div style={styles.newsHero}>
         <div>
           <div style={styles.newsHeroBadge}>MARKET DESK</div>
-          <h2 style={styles.newsHeroTitle}>Новинарски център преди анализа</h2>
+          <h2 style={styles.newsHeroTitle}>Market News Hub</h2>
           <p style={styles.newsHeroText}>
-            Когато няма избран тикер, тук виждаш бърз достъп до актуални пазарни,
-            корпоративни и крипто новини. След като въведеш тикер и натиснеш
-            „Анализирай“, тази зона се заменя с пълния анализ на актива.
+            Before running an analysis, this area gives users quick access to reliable market,
+            company and crypto news sources. After entering a ticker and pressing
+            “Analyze”, this area is replaced by the full asset analysis.
           </p>
         </div>
       </div>
 
       <div style={styles.newsGrid}>
         <NewsSection
-          title="Пазарни новини"
-          subtitle="Индекси, Фед, инфлация, облигации и глобален риск."
+          title="Market News"
+          subtitle="Indexes, central banks, inflation, bonds and global risk."
           category="market"
         />
 
         <NewsSection
-          title="Новини за компании"
-          subtitle="AI акции, earnings, guidance, margins и големи движения."
+          title="Company News"
+          subtitle="AI stocks, earnings, guidance, margins and major movers."
           category="company"
         />
 
         <NewsSection
-          title="Крипто новини"
-          subtitle="Bitcoin, Ethereum, ETF потоци, регулации и алткойни."
+          title="Crypto News"
+          subtitle="Bitcoin, Ethereum, ETF flows, regulation and altcoins."
           category="crypto"
         />
       </div>
@@ -1011,7 +1010,7 @@ export default function DashboardPage() {
     stockResult?.assetType === "crypto" ? "crypto" : "stock";
 
   const currentSymbol = stockResult?.companyInfo?.symbol?.trim().toUpperCase() || "";
-  const currentName = stockResult?.companyInfo?.name?.trim() || currentSymbol || "Актив";
+  const currentName = stockResult?.companyInfo?.name?.trim() || currentSymbol || "Asset";
 
   const isCurrentInWatchlist = useMemo(() => {
     if (!currentSymbol) return false;
@@ -1283,7 +1282,7 @@ export default function DashboardPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data?.error || "Грешка при добавяне в watchlist.");
+        alert(data?.error || "Error при добавяне в watchlist.");
         return;
       }
 
@@ -1303,7 +1302,7 @@ export default function DashboardPage() {
       });
     } catch (error) {
       console.error("WATCHLIST ADD ERROR:", error);
-      alert("Грешка при добавяне в watchlist.");
+      alert("Error при добавяне в watchlist.");
     }
   };
 
@@ -1320,14 +1319,14 @@ export default function DashboardPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data?.error || "Грешка при премахване от watchlist.");
+        alert(data?.error || "Error при премахване от watchlist.");
         return;
       }
 
       setWatchlist((prev) => prev.filter((item) => item.symbol !== symbol));
     } catch (error) {
       console.error("WATCHLIST DELETE ERROR:", error);
-      alert("Грешка при премахване от watchlist.");
+      alert("Error при премахване от watchlist.");
     }
   };
 
@@ -1344,7 +1343,7 @@ export default function DashboardPage() {
 
   const createAlert = async () => {
     if (!alertsEnabled) {
-      alert("Alerts са налични само за PRO и UNLIMITED.");
+      alert("Alerts are available only for PRO and UNLIMITED.");
       return;
     }
 
@@ -1352,12 +1351,12 @@ export default function DashboardPage() {
     const targetPrice = Number(alertTargetPrice);
 
     if (!symbol) {
-      alert("Въведи символ.");
+      alert("Enter a symbol.");
       return;
     }
 
     if (!Number.isFinite(targetPrice) || targetPrice <= 0) {
-      alert("Въведи валидна цена.");
+      alert("Enter a valid price.");
       return;
     }
 
@@ -1378,7 +1377,7 @@ export default function DashboardPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data?.error || "Грешка при създаване на alert.");
+        alert(data?.error || "Error при създаване на alert.");
         return;
       }
 
@@ -1388,7 +1387,7 @@ export default function DashboardPage() {
       setAlertConditionType("above");
     } catch (error) {
       console.error("CREATE ALERT ERROR:", error);
-      alert("Грешка при създаване на alert.");
+      alert("Error при създаване на alert.");
     }
   };
 
@@ -1405,14 +1404,14 @@ export default function DashboardPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data?.error || "Грешка при изтриване на alert.");
+        alert(data?.error || "Error при изтриване на alert.");
         return;
       }
 
       setAlerts((prev) => prev.filter((item) => item.id !== id));
     } catch (error) {
       console.error("DELETE ALERT ERROR:", error);
-      alert("Грешка при изтриване на alert.");
+      alert("Error при изтриване на alert.");
     }
   };
 
@@ -1420,13 +1419,13 @@ export default function DashboardPage() {
     const symbolToAnalyze = (forcedSymbol ?? ticker).trim().toUpperCase();
 
     if (!email) {
-      alert("Няма активен потребител.");
+      alert("No active user.");
       window.location.href = "/auth";
       return;
     }
 
     if (!symbolToAnalyze) {
-      alert("Въведи тикер.");
+      alert("Enter a ticker.");
       return;
     }
 
@@ -1450,7 +1449,7 @@ export default function DashboardPage() {
           setRemaining(data.remainingToday);
         }
 
-        alert(data.error || "Грешка при анализа.");
+        alert(data.error || "Error при анализа.");
         setAnalyzing(false);
         return;
       }
@@ -1464,7 +1463,7 @@ export default function DashboardPage() {
       setTicker("");
     } catch (error) {
       console.error("Analyze error:", error);
-      alert("Възникна неочаквана грешка при анализа.");
+      alert("An unexpected error occurred during the analysis.");
     } finally {
       setAnalyzing(false);
     }
@@ -1482,9 +1481,9 @@ export default function DashboardPage() {
   };
 
   const getPlanLabel = () => {
-    if (plan === "loading") return "Зареждане...";
-    if (plan === "no-user") return "Няма потребител";
-    if (plan === "error") return "Грешка";
+    if (plan === "loading") return "Loading...";
+    if (plan === "no-user") return "No user";
+    if (plan === "error") return "Error";
     if (plan === "basic" && !accessActive) return "VISITOR";
     if (plan === "basic" && accessActive) return "BASIC";
     return plan.toUpperCase();
@@ -1497,22 +1496,22 @@ export default function DashboardPage() {
   };
 
   const getFinalAssessmentTitle = () => {
-    if (!stockResult) return "Пазарен режим";
-    return stockResult.purchaseSignal || "Финална оценка";
+    if (!stockResult) return "Market Mode";
+    return stockResult.purchaseSignal || "Final Assessment";
   };
 
   const getFinalAssessmentText = () => {
     if (!stockResult) {
-      return "Избери актив от списъка или въведи тикер. След анализа тук ще се появи финалното заключение.";
+      return "Select an asset from the list or enter a ticker. After the analysis, the final assessment will appear here.";
     }
 
     if (stockResult.tier === "basic") {
-      return `${stockResult.companyInfo?.name || "Активът"} в момента изглежда: ${stockResult.purchaseSignal || "Няма данни"}.`;
+      return `${stockResult.companyInfo?.name || "Assetът"} currently looks: ${stockResult.purchaseSignal || "No data"}.`;
     }
 
     return (
       stockResult.aiAnalysis?.summary ||
-      `${stockResult.companyInfo?.name || "Активът"} в момента изглежда: ${stockResult.purchaseSignal || "Няма данни"}.`
+      `${stockResult.companyInfo?.name || "Assetът"} currently looks: ${stockResult.purchaseSignal || "No data"}.`
     );
   };
 
@@ -1535,9 +1534,9 @@ export default function DashboardPage() {
       <div style={styles.wrapper}>
         <div style={styles.header}>
           <div>
-            <h1 style={styles.title}>Платформа за фундаментален анализ</h1>
+            <h1 style={styles.title}>Fundamental Analysis Platform</h1>
             <p style={styles.subtitle}>
-              Въведи тикер или крипто символ, анализирай актива и следи лимитите според плана си.
+              Enter a stock ticker or crypto symbol, analyze the asset and track your plan limits.
             </p>
           </div>
 
@@ -1554,7 +1553,7 @@ export default function DashboardPage() {
                   window.location.href = "/";
                 }}
               >
-                Начало
+                Home
               </button>
 
               <button
@@ -1563,7 +1562,7 @@ export default function DashboardPage() {
                   window.location.href = "/pricing";
                 }}
               >
-                Планове
+                Plans
               </button>
 
               {rsiEnabled ? (
@@ -1588,7 +1587,7 @@ export default function DashboardPage() {
 
               {isLoggedIn ? (
                 <button style={styles.logoutButton} onClick={handleLogout}>
-                  Изход
+                  Logout
                 </button>
               ) : (
                 <button
@@ -1597,7 +1596,7 @@ export default function DashboardPage() {
                     window.location.href = "/auth";
                   }}
                 >
-                  Вход
+                  Login
                 </button>
               )}
             </div>
@@ -1607,7 +1606,7 @@ export default function DashboardPage() {
         <div style={styles.searchCard}>
           <input
             type="text"
-            placeholder="Въведи тикер или крипто символ, например AAPL или BTC"
+            placeholder="Enter a stock ticker or crypto symbol, for example AAPL or BTC"
             value={ticker}
             onChange={(e) => setTicker(e.target.value.toUpperCase())}
             onKeyDown={(e) => {
@@ -1624,14 +1623,14 @@ export default function DashboardPage() {
             onClick={() => handleAnalyze()}
             disabled={analyzing || loading}
           >
-            {analyzing ? "Анализиране..." : "Анализирай"}
+            {analyzing ? "Analyzing..." : "Analyze"}
           </button>
         </div>
 
         {cleanedTicker ? (
           <div style={styles.hintRow}>
             <span style={styles.hintBadge}>
-              Разпознат тип: {isLikelyCrypto ? "Криптовалута" : "Акция / компания"}
+              Detected type: {isLikelyCrypto ? "Cryptocurrency" : "Stock / company"}
             </span>
           </div>
         ) : null}
@@ -1645,7 +1644,7 @@ export default function DashboardPage() {
                 <div style={styles.profileCard}>
                   <div style={styles.sectionTitleRow}>
                     <h2 style={styles.sectionTitle}>
-                      {stockResult?.assetType === "crypto" ? "Информация за актива" : "Информация за компанията"}
+                      {stockResult?.assetType === "crypto" ? "Asset Information" : "Company Information"}
                     </h2>
 
                     {stockResult?.companyInfo?.symbol ? (
@@ -1659,21 +1658,21 @@ export default function DashboardPage() {
                             : {}),
                         }}
                       >
-                        {isCurrentInWatchlist ? "★ В любими" : "☆ Добави в любими"}
+                        {isCurrentInWatchlist ? "★ In Watchlist" : "☆ Add to Watchlist"}
                       </button>
                     ) : null}
                   </div>
 
                   <div style={styles.profileTopGrid}>
                     <div style={styles.profileMiniCard}>
-                      <div style={styles.resultLabel}>Име</div>
+                      <div style={styles.resultLabel}>Name</div>
                       <div style={styles.profileMainValue}>
                         {safeText(stockResult.companyInfo?.name)}
                       </div>
                     </div>
 
                     <div style={styles.profileMiniCard}>
-                      <div style={styles.resultLabel}>Символ</div>
+                      <div style={styles.resultLabel}>Symbol</div>
                       <div style={styles.profileMainValue}>
                         {safeText(stockResult.companyInfo?.symbol)}
                       </div>
@@ -1682,28 +1681,28 @@ export default function DashboardPage() {
 
                   <div style={styles.compactGrid}>
                     <MetricCard
-                      label="Сектор"
+                      label="Sector"
                       value={safeText(stockResult.companyInfo?.sector)}
                     />
                     <MetricCard
-                      label="Индустрия"
+                      label="Industry"
                       value={safeText(stockResult.companyInfo?.industry)}
                     />
                     <MetricCard
-                      label="Държава"
+                      label="Country"
                       value={safeText(stockResult.companyInfo?.country)}
                     />
                     <MetricCard
-                      label="Борса / източник"
+                      label="Exchange / Source"
                       value={safeText(stockResult.companyInfo?.exchange)}
                     />
                     <MetricCard
-                      label="Валута"
+                      label="Currency"
                       value={safeText(stockResult.companyInfo?.currency)}
                     />
 
                     <div style={styles.metricCard}>
-                      <div style={styles.metricLabel}>Сайт</div>
+                      <div style={styles.metricLabel}>Website</div>
                       <div style={styles.metricValueSmall}>
                         {stockResult.companyInfo?.website ? (
                           <a
@@ -1715,7 +1714,7 @@ export default function DashboardPage() {
                             {stockResult.companyInfo.website}
                           </a>
                         ) : (
-                          "Няма данни"
+                          "No data"
                         )}
                       </div>
                     </div>
@@ -1723,7 +1722,7 @@ export default function DashboardPage() {
 
                   <div style={styles.descriptionCard}>
                     <div style={styles.resultLabel}>
-                      {stockResult?.assetType === "crypto" ? "Описание" : "С какво се занимава"}
+                      {stockResult?.assetType === "crypto" ? "Description" : "Business Description"}
                     </div>
                     <div style={styles.descriptionText}>
                       {safeText(stockResult.companyInfo?.description)}
@@ -1746,18 +1745,18 @@ export default function DashboardPage() {
                 <div style={styles.sectionHeader}>BASIC</div>
                 <div style={styles.compactGrid}>
                   <MetricCard
-                    label={stockResult.assetType === "crypto" ? "Актив" : "Компания"}
+                    label={stockResult.assetType === "crypto" ? "Asset" : "Company"}
                     value={safeText(stockResult.companyInfo?.name)}
                   />
                   <MetricCard
-                    label="Цена"
+                    label="Price"
                     value={formatNumber(stockResult.price)}
                   />
                   <MetricCard
                     label="P/E Ratio"
                     value={
                       stockResult.assetType === "crypto"
-                        ? "Не се прилага"
+                        ? "Not applicable"
                         : formatNumber(stockResult.peRatio)
                     }
                   />
@@ -1765,7 +1764,7 @@ export default function DashboardPage() {
                     label="ROE"
                     value={
                       stockResult.assetType === "crypto"
-                        ? "Не се прилага"
+                        ? "Not applicable"
                         : formatPercent(stockResult.roe)
                     }
                   />
@@ -1773,7 +1772,7 @@ export default function DashboardPage() {
                     label="Operating Margin"
                     value={
                       stockResult.assetType === "crypto"
-                        ? "Не се прилага"
+                        ? "Not applicable"
                         : formatPercent(stockResult.operatingMargin)
                     }
                   />
@@ -1781,7 +1780,7 @@ export default function DashboardPage() {
                     label="Net Margin"
                     value={
                       stockResult.assetType === "crypto"
-                        ? "Не се прилага"
+                        ? "Not applicable"
                         : formatPercent(stockResult.netMargin)
                     }
                   />
@@ -1789,7 +1788,7 @@ export default function DashboardPage() {
                     label="Debt / Equity"
                     value={
                       stockResult.assetType === "crypto"
-                        ? "Не се прилага"
+                        ? "Not applicable"
                         : formatNumber(stockResult.debtToEquity)
                     }
                   />
@@ -1798,12 +1797,12 @@ export default function DashboardPage() {
                     value={
                       stockResult.aiScore?.score && stockResult.aiScore?.signal
                         ? `${stockResult.aiScore.score}/10 (${stockResult.aiScore.signal})`
-                        : "Няма данни"
+                        : "No data"
                     }
                   />
                   <MetricCard
-                    label="Сигнал"
-                    value={stockResult.purchaseSignal || "Няма данни"}
+                    label="Signal"
+                    value={stockResult.purchaseSignal || "No data"}
                   />
                 </div>
 
@@ -1813,7 +1812,7 @@ export default function DashboardPage() {
                     <div style={styles.compactGrid}>
                       <MetricCard
                         label={
-                          stockResult.assetType === "crypto" ? "Обем / мрежов мащаб" : "Revenue"
+                          stockResult.assetType === "crypto" ? "Volume / Network Scale" : "Revenue"
                         }
                         value={formatLargeNumber(stockResult.revenue)}
                       />
@@ -1825,21 +1824,21 @@ export default function DashboardPage() {
                         label="EPS"
                         value={
                           stockResult.assetType === "crypto"
-                            ? "Не се прилага"
+                            ? "Not applicable"
                             : formatNumber(stockResult.eps)
                         }
                       />
                       <MetricCard
-                        label="Реална стойност"
+                        label="Fair Value"
                         value={formatNumber(stockResult.realValue)}
                       />
                     </div>
 
                     <div style={styles.aiCard}>
-                      <div style={styles.aiTitle}>AI анализ</div>
+                      <div style={styles.aiTitle}>AI Analysis</div>
 
                       <p style={styles.aiText}>
-                        {stockResult.aiAnalysis?.summary || "Няма AI анализ"}
+                        {stockResult.aiAnalysis?.summary || "Няма AI Analysis"}
                       </p>
 
                       <div style={styles.aiColumns}>
@@ -1865,7 +1864,7 @@ export default function DashboardPage() {
                       <div style={styles.fairValueBox}>
                         <span style={styles.resultLabel}>Fair value view:</span>{" "}
                         <span style={styles.fairValueText}>
-                          {stockResult.aiAnalysis?.fairValueView || "Няма данни"}
+                          {stockResult.aiAnalysis?.fairValueView || "No data"}
                         </span>
                       </div>
                     </div>
@@ -1880,7 +1879,7 @@ export default function DashboardPage() {
                         label="Free Cash Flow"
                         value={
                           stockResult.assetType === "crypto"
-                            ? "Не се прилага"
+                            ? "Not applicable"
                             : formatLargeNumber(stockResult.extraMetrics?.freeCashFlow)
                         }
                       />
@@ -1888,7 +1887,7 @@ export default function DashboardPage() {
                         label="ROIC / ROA proxy"
                         value={
                           stockResult.assetType === "crypto"
-                            ? "Не се прилага"
+                            ? "Not applicable"
                             : formatPercent(stockResult.extraMetrics?.roic)
                         }
                       />
@@ -1896,7 +1895,7 @@ export default function DashboardPage() {
                         label="Current Ratio"
                         value={
                           stockResult.assetType === "crypto"
-                            ? "Не се прилага"
+                            ? "Not applicable"
                             : formatNumber(stockResult.extraMetrics?.currentRatio)
                         }
                       />
@@ -1908,14 +1907,14 @@ export default function DashboardPage() {
                         label="EPS Growth"
                         value={
                           stockResult.assetType === "crypto"
-                            ? "Не се прилага"
+                            ? "Not applicable"
                             : formatPercent(stockResult.extraMetrics?.earningsGrowth)}
                       />
                       <MetricCard
                         label="Dividend Yield"
                         value={
                           stockResult.assetType === "crypto"
-                            ? "Не се прилага"
+                            ? "Not applicable"
                             : formatPercent(stockResult.extraMetrics?.dividendYield)
                         }
                       />
@@ -1928,7 +1927,7 @@ export default function DashboardPage() {
 
           <div style={styles.sidebar}>
             <div style={styles.sideCard}>
-              <h3 style={styles.sideTitle}>Финална оценка</h3>
+              <h3 style={styles.sideTitle}>Final Assessment</h3>
               <div style={styles.badge}>{getFinalAssessmentTitle()}</div>
               <p style={styles.sideText}>{getFinalAssessmentText()}</p>
 
@@ -1952,27 +1951,27 @@ export default function DashboardPage() {
             </div>
 
             <div style={styles.sideCard}>
-              <h3 style={styles.sideTitle}>Текущ план</h3>
+              <h3 style={styles.sideTitle}>Current Plan</h3>
 
               <div style={styles.planRow}>
-                <span style={styles.planKey}>Потребител:</span>
+                <span style={styles.planKey}>User:</span>
                 <span style={styles.planValue}>
-                  {email ? email : "Няма данни"}
+                  {email ? email : "No data"}
                 </span>
               </div>
 
               <div style={styles.planRow}>
-                <span style={styles.planKey}>План:</span>
+                <span style={styles.planKey}>Plan:</span>
                 <span style={styles.planValue}>{getPlanLabel()}</span>
               </div>
 
               <div style={styles.planRow}>
-                <span style={styles.planKey}>Платен достъп:</span>
-                <span style={styles.planValue}>{accessActive ? "Активен" : "Неактивен"}</span>
+                <span style={styles.planKey}>Paid access:</span>
+                <span style={styles.planValue}>{accessActive ? "Assetен" : "Inactive"}</span>
               </div>
 
               <div style={styles.planRow}>
-                <span style={styles.planKey}>Оставащи анализи:</span>
+                <span style={styles.planKey}>Remaining analyses:</span>
                 <span style={styles.planValue}>{plan === "unlimited" ? "∞" : remaining}</span>
               </div>
 
@@ -2015,7 +2014,7 @@ export default function DashboardPage() {
             />
 
             <MarketOverviewCard
-              title="Популярни акции"
+              title="Popular Stocks"
               items={overview.stocks}
               type="stocks"
               onSelectSymbol={handleQuickSelect}
@@ -2023,7 +2022,7 @@ export default function DashboardPage() {
             />
 
             <MarketOverviewCard
-              title="Популярно крипто"
+              title="Popular Crypto"
               items={overview.cryptos}
               type="crypto"
               onSelectSymbol={handleQuickSelect}
