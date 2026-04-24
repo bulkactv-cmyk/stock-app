@@ -3,6 +3,8 @@ import YahooFinance from "yahoo-finance2";
 import { createClient } from "../../../lib/supabase/server";
 import { checkUsageLimit, incrementUsage } from "../../../lib/check-usage-limit";
 
+export const runtime = "nodejs";
+
 const yahooFinance = new YahooFinance();
 
 type CmcQuote = {
@@ -58,35 +60,6 @@ type CmcInfo = {
   date_added?: string;
 };
 
-const CRYPTO_MAP: Record<string, string> = {
-  BTC: "BTC",
-  ETH: "ETH",
-  SOL: "SOL",
-  BNB: "BNB",
-  XRP: "XRP",
-  ADA: "ADA",
-  DOGE: "DOGE",
-  AVAX: "AVAX",
-  LINK: "LINK",
-  DOT: "DOT",
-  TON: "TON",
-  TRX: "TRX",
-  SHIB: "SHIB",
-  LTC: "LTC",
-  BCH: "BCH",
-  UNI: "UNI",
-  ATOM: "ATOM",
-  NEAR: "NEAR",
-  APT: "APT",
-  FIL: "FIL",
-  ARB: "ARB",
-  OP: "OP",
-  INJ: "INJ",
-  SUI: "SUI",
-  HBAR: "HBAR",
-  PEPE: "PEPE",
-};
-
 function toNumber(value: unknown): number | null {
   if (value === null || value === undefined || value === "") return null;
   const num = Number(value);
@@ -101,6 +74,14 @@ function formatMetric(value: number | null, suffix = "") {
 function formatPercentMetric(value: number | null) {
   if (value === null || Number.isNaN(value)) return "not available";
   return `${(value * 100).toFixed(2)}%`;
+}
+
+function safeLimitValue(value: number) {
+  return value === Infinity ? "unlimited" : value;
+}
+
+function safeRemainingValue(value: number) {
+  return value === Infinity ? "unlimited" : value;
 }
 
 function estimateSignal(params: {
@@ -403,6 +384,12 @@ async function fetchCoinMarketCapCrypto(symbol: string) {
     throw new Error("Missing COINMARKETCAP_API_KEY");
   }
 
+  const cleanSymbol = symbol.trim().toUpperCase();
+
+  if (!cleanSymbol) {
+    throw new Error("Missing crypto symbol.");
+  }
+
   const headers = {
     "X-CMC_PRO_API_KEY": apiKey,
     Accept: "application/json",
@@ -410,14 +397,18 @@ async function fetchCoinMarketCapCrypto(symbol: string) {
 
   const [quoteRes, infoRes] = await Promise.all([
     fetch(
-      `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=${symbol}&convert=USD`,
+      `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=${encodeURIComponent(
+        cleanSymbol
+      )}&convert=USD`,
       {
         headers,
         cache: "no-store",
       }
     ),
     fetch(
-      `https://pro-api.coinmarketcap.com/v2/cryptocurrency/info?symbol=${symbol}`,
+      `https://pro-api.coinmarketcap.com/v2/cryptocurrency/info?symbol=${encodeURIComponent(
+        cleanSymbol
+      )}`,
       {
         headers,
         cache: "no-store",
@@ -440,11 +431,22 @@ async function fetchCoinMarketCapCrypto(symbol: string) {
     );
   }
 
-  const quoteData = quoteJson?.data?.[symbol] as CmcQuote | undefined;
+  const rawQuoteData = quoteJson?.data?.[cleanSymbol];
 
-  const infoEntry = infoJson?.data?.[symbol];
+  const quoteData = Array.isArray(rawQuoteData)
+    ? ([...rawQuoteData] as CmcQuote[]).sort(
+        (a, b) => (a.cmc_rank || 999999) - (b.cmc_rank || 999999)
+      )[0]
+    : (rawQuoteData as CmcQuote | undefined);
+
+  const infoEntry = infoJson?.data?.[cleanSymbol];
+
   const infoData = Array.isArray(infoEntry)
-    ? (infoEntry[0] as CmcInfo | undefined)
+    ? ([...infoEntry] as CmcInfo[]).sort((a, b) => {
+        const aId = typeof a.id === "number" ? a.id : 999999999;
+        const bId = typeof b.id === "number" ? b.id : 999999999;
+        return aId - bId;
+      })[0]
     : (infoEntry as CmcInfo | undefined);
 
   if (!quoteData) {
@@ -471,12 +473,13 @@ async function fetchCoinMarketCapCrypto(symbol: string) {
     tier: "unlimited",
     assetType: "crypto",
     companyInfo: {
-      symbol: quoteData.symbol || symbol,
-      name: quoteData.name || symbol,
+      symbol: quoteData.symbol || cleanSymbol,
+      name: quoteData.name || cleanSymbol,
       sector: "Cryptocurrency",
       industry: infoData?.category || "Digital Assets",
       description:
-        infoData?.description || `${symbol} is a cryptocurrency traded against USD.`,
+        infoData?.description ||
+        `${quoteData.symbol || cleanSymbol} is a cryptocurrency traded against USD.`,
       website: infoData?.urls?.website?.[0] || null,
       country: "Global market",
       exchange: "CoinMarketCap",
@@ -501,7 +504,7 @@ async function fetchCoinMarketCapCrypto(symbol: string) {
     realValue: null,
     aiAnalysis: {
       summary:
-        `${quoteData.name || symbol} is a high-volatility digital asset. The analysis focuses on liquidity, market capitalization, supply structure, dominance and momentum rather than traditional equity metrics such as EPS, P/E or margins.`,
+        `${quoteData.name || cleanSymbol} is a high-volatility digital asset. The analysis focuses on liquidity, market capitalization, supply structure, dominance and momentum rather than traditional equity metrics such as EPS, P/E or margins.`,
       bullCase: [
         "High liquidity can support efficient entry and exit for active traders.",
         "Strong market attention can create upside momentum during crypto risk-on phases.",
@@ -563,6 +566,19 @@ async function fetchCoinMarketCapCrypto(symbol: string) {
   };
 }
 
+async function tryFetchCoinMarketCapCrypto(symbol: string) {
+  try {
+    return await fetchCoinMarketCapCrypto(symbol);
+  } catch (error) {
+    console.log("CRYPTO LOOKUP SKIPPED:", {
+      symbol,
+      message: error instanceof Error ? error.message : String(error),
+    });
+
+    return null;
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -598,9 +614,9 @@ export async function POST(req: Request) {
         {
           error: "Daily analysis limit reached.",
           plan: limitCheck.plan,
-          dailyLimit: limitCheck.dailyLimit,
+          dailyLimit: safeLimitValue(limitCheck.dailyLimit),
           usedToday: limitCheck.usedToday,
-          remainingToday: limitCheck.remainingToday,
+          remainingToday: safeRemainingValue(limitCheck.remainingToday),
         },
         { status: 429 }
       );
@@ -608,24 +624,29 @@ export async function POST(req: Request) {
 
     const currentPlan = limitCheck.plan;
 
-    const cryptoSymbol = CRYPTO_MAP[cleanTicker] || null;
-    const isCrypto = !!cryptoSymbol;
+    const cryptoPayload = await tryFetchCoinMarketCapCrypto(cleanTicker);
 
-    if (isCrypto && currentPlan !== "unlimited") {
-      return NextResponse.json(
-        { error: "Cryptocurrency analysis is available only on the Unlimited plan." },
-        { status: 403 }
-      );
-    }
+    if (cryptoPayload) {
+      if (currentPlan !== "unlimited") {
+        return NextResponse.json(
+          {
+            error:
+              "Cryptocurrency analysis is available only on the Unlimited plan.",
+          },
+          { status: 403 }
+        );
+      }
 
-    if (isCrypto && currentPlan === "unlimited") {
-      const cryptoPayload = await fetchCoinMarketCapCrypto(cryptoSymbol);
       await incrementUsage(user.email);
+
       return NextResponse.json({
         ...cryptoPayload,
-        dailyLimit: limitCheck.dailyLimit,
+        dailyLimit: safeLimitValue(limitCheck.dailyLimit),
         usedToday: limitCheck.usedToday + 1,
-        remainingToday: Math.max(limitCheck.remainingToday - 1, 0),
+        remainingToday:
+          limitCheck.remainingToday === Infinity
+            ? "unlimited"
+            : Math.max(limitCheck.remainingToday - 1, 0),
       });
     }
 
@@ -694,9 +715,12 @@ export async function POST(req: Request) {
         debtToEquity,
       }),
       aiScore,
-      dailyLimit: limitCheck.dailyLimit,
+      dailyLimit: safeLimitValue(limitCheck.dailyLimit),
       usedToday: limitCheck.usedToday + 1,
-      remainingToday: Math.max(limitCheck.remainingToday - 1, 0),
+      remainingToday:
+        limitCheck.remainingToday === Infinity
+          ? "unlimited"
+          : Math.max(limitCheck.remainingToday - 1, 0),
     };
 
     if (currentPlan === "basic") {
@@ -797,10 +821,14 @@ export async function POST(req: Request) {
 
     await incrementUsage(user.email);
     return NextResponse.json(responsePayload);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("STOCK ROUTE ERROR:", error);
+
     return NextResponse.json(
-      { error: error?.message || "Stock analysis failed." },
+      {
+        error:
+          error instanceof Error ? error.message : "Stock analysis failed.",
+      },
       { status: 500 }
     );
   }
