@@ -93,6 +93,16 @@ function toNumber(value: unknown): number | null {
   return Number.isFinite(num) ? num : null;
 }
 
+function formatMetric(value: number | null, suffix = "") {
+  if (value === null || Number.isNaN(value)) return "not available";
+  return `${Number(value).toFixed(2)}${suffix}`;
+}
+
+function formatPercentMetric(value: number | null) {
+  if (value === null || Number.isNaN(value)) return "not available";
+  return `${(value * 100).toFixed(2)}%`;
+}
+
 function estimateSignal(params: {
   peRatio: number | null;
   roe: number | null;
@@ -129,9 +139,9 @@ function estimateSignal(params: {
     else if (debtToEquity > 2.0) score -= 1;
   }
 
-  if (score >= 3) return "Добра за наблюдение";
-  if (score >= 1) return "Умерено атрактивна";
-  return "Неизгодна в момента";
+  if (score >= 3) return "Attractive for watchlist";
+  if (score >= 1) return "Moderately attractive";
+  return "Unattractive at current levels";
 }
 
 function calculateAIScore(params: {
@@ -172,11 +182,225 @@ function calculateAIScore(params: {
   return { score, signal: "SELL" };
 }
 
+function buildProAnalysis(params: {
+  companyName: string;
+  price: number | null;
+  realValue: number | null;
+  peRatio: number | null;
+  roe: number | null;
+  operatingMargin: number | null;
+  netMargin: number | null;
+  debtToEquity: number | null;
+}) {
+  const {
+    companyName,
+    price,
+    realValue,
+    peRatio,
+    roe,
+    operatingMargin,
+    netMargin,
+    debtToEquity,
+  } = params;
+
+  const bullPoints: string[] = [];
+  const bearPoints: string[] = [];
+
+  if (roe !== null && roe >= 0.15) {
+    bullPoints.push(`Strong return on equity at ${formatPercentMetric(roe)}, indicating efficient use of shareholder capital.`);
+  }
+  if (operatingMargin !== null && operatingMargin >= 0.15) {
+    bullPoints.push(`Healthy operating margin at ${formatPercentMetric(operatingMargin)}, showing solid core profitability.`);
+  }
+  if (netMargin !== null && netMargin >= 0.1) {
+    bullPoints.push(`Stable net margin at ${formatPercentMetric(netMargin)}, suggesting good bottom-line conversion.`);
+  }
+  if (debtToEquity !== null && debtToEquity <= 1.0) {
+    bullPoints.push(`Manageable leverage with debt-to-equity near ${formatMetric(debtToEquity)}.`);
+  }
+
+  if (peRatio !== null && peRatio > 30) {
+    bearPoints.push(`Elevated valuation with a P/E ratio near ${formatMetric(peRatio)}, leaving less room for execution mistakes.`);
+  }
+  if (debtToEquity !== null && debtToEquity > 2.0) {
+    bearPoints.push(`Higher balance-sheet risk due to debt-to-equity near ${formatMetric(debtToEquity)}.`);
+  }
+  if (operatingMargin !== null && operatingMargin < 0.08) {
+    bearPoints.push(`Weak operating margin at ${formatPercentMetric(operatingMargin)}, which may limit earnings resilience.`);
+  }
+  if (netMargin !== null && netMargin < 0.05) {
+    bearPoints.push(`Low net margin at ${formatPercentMetric(netMargin)}, indicating limited profitability after costs.`);
+  }
+
+  const valuationText =
+    realValue !== null && price !== null
+      ? price < realValue
+        ? "appears to trade below the model-implied fair value"
+        : price > realValue
+        ? "appears to trade above the model-implied fair value"
+        : "trades close to the model-implied fair value"
+      : "cannot be valued with high confidence because several key inputs are missing";
+
+  return {
+    summary:
+      `${companyName} ${valuationText}. The PRO view focuses on valuation, profitability, leverage and margin quality. ` +
+      `The stock should be interpreted through the balance between business quality and the price investors are currently paying.`,
+    bullCase: bullPoints.length
+      ? bullPoints
+      : ["There is no strong positive signal from the available profitability, leverage and valuation metrics."],
+    bearCase: bearPoints.length
+      ? bearPoints
+      : ["There is no major negative signal from the available profitability, leverage and valuation metrics."],
+    fairValueView:
+      realValue !== null && price !== null
+        ? price < realValue
+          ? "The stock looks below estimated fair value based on the simplified EPS and P/E model."
+          : price > realValue
+          ? "The stock looks above estimated fair value based on the simplified EPS and P/E model."
+          : "The stock looks close to estimated fair value based on the simplified EPS and P/E model."
+        : "There is not enough data to calculate a reliable fair value estimate.",
+  };
+}
+
+function buildUnlimitedAnalysis(params: {
+  companyName: string;
+  price: number | null;
+  realValue: number | null;
+  peRatio: number | null;
+  roe: number | null;
+  operatingMargin: number | null;
+  netMargin: number | null;
+  debtToEquity: number | null;
+  revenue: number | null;
+  marketCap: number | null;
+  eps: number | null;
+  freeCashFlow: number | null;
+  roic: number | null;
+  currentRatio: number | null;
+  revenueGrowth: number | null;
+  earningsGrowth: number | null;
+  dividendYield: number | null;
+}) {
+  const {
+    companyName,
+    price,
+    realValue,
+    peRatio,
+    roe,
+    operatingMargin,
+    netMargin,
+    debtToEquity,
+    revenue,
+    marketCap,
+    eps,
+    freeCashFlow,
+    roic,
+    currentRatio,
+    revenueGrowth,
+    earningsGrowth,
+    dividendYield,
+  } = params;
+
+  const bullCase: string[] = [];
+  const bearCase: string[] = [];
+
+  if (freeCashFlow !== null && freeCashFlow > 0) {
+    bullCase.push("Positive free cash flow supports financial flexibility, buybacks, debt reduction or reinvestment into growth.");
+  }
+  if (revenueGrowth !== null && revenueGrowth > 0.05) {
+    bullCase.push(`Revenue growth of ${formatPercentMetric(revenueGrowth)} indicates that demand is still expanding at a healthy pace.`);
+  }
+  if (earningsGrowth !== null && earningsGrowth > 0.05) {
+    bullCase.push(`Earnings growth of ${formatPercentMetric(earningsGrowth)} suggests improving profitability and operating leverage.`);
+  }
+  if (roe !== null && roe >= 0.15) {
+    bullCase.push(`ROE of ${formatPercentMetric(roe)} points to strong capital efficiency and potentially durable shareholder value creation.`);
+  }
+  if (operatingMargin !== null && operatingMargin >= 0.15) {
+    bullCase.push(`Operating margin of ${formatPercentMetric(operatingMargin)} shows that the core business has meaningful pricing power or cost discipline.`);
+  }
+  if (currentRatio !== null && currentRatio >= 1) {
+    bullCase.push(`Current ratio of ${formatMetric(currentRatio)} suggests acceptable short-term liquidity.`);
+  }
+
+  if (peRatio !== null && peRatio > 30) {
+    bearCase.push(`The P/E ratio near ${formatMetric(peRatio)} implies high market expectations and increases downside risk if growth slows.`);
+  }
+  if (debtToEquity !== null && debtToEquity > 2) {
+    bearCase.push(`Debt-to-equity near ${formatMetric(debtToEquity)} increases financial risk, especially in a higher-rate environment.`);
+  }
+  if (netMargin !== null && netMargin < 0.05) {
+    bearCase.push(`Net margin of ${formatPercentMetric(netMargin)} is thin, leaving limited room for cost inflation or revenue weakness.`);
+  }
+  if (revenueGrowth !== null && revenueGrowth < 0) {
+    bearCase.push(`Negative revenue growth of ${formatPercentMetric(revenueGrowth)} signals demand pressure or cyclical weakness.`);
+  }
+  if (earningsGrowth !== null && earningsGrowth < 0) {
+    bearCase.push(`Negative earnings growth of ${formatPercentMetric(earningsGrowth)} points to weakening profitability momentum.`);
+  }
+  if (freeCashFlow !== null && freeCashFlow < 0) {
+    bearCase.push("Negative free cash flow can reduce financial flexibility and may require external financing if it persists.");
+  }
+
+  const valuationView =
+    realValue !== null && price !== null
+      ? price < realValue
+        ? `The simplified fair value model suggests upside because the current price is below estimated fair value of ${formatMetric(realValue)}.`
+        : price > realValue
+        ? `The simplified fair value model suggests caution because the current price is above estimated fair value of ${formatMetric(realValue)}.`
+        : `The current price is very close to the simplified fair value estimate of ${formatMetric(realValue)}.`
+      : "Fair value confidence is limited because EPS or valuation multiple inputs are incomplete.";
+
+  const summary =
+    `${companyName} receives an UNLIMITED-level institutional review across valuation, profitability, growth, liquidity and balance-sheet quality. ` +
+    `Current price is ${price !== null ? formatMetric(price) : "not available"}, estimated fair value is ${realValue !== null ? formatMetric(realValue) : "not available"}, ` +
+    `P/E is ${formatMetric(peRatio)}, revenue growth is ${formatPercentMetric(revenueGrowth)}, earnings growth is ${formatPercentMetric(earningsGrowth)}, ` +
+    `operating margin is ${formatPercentMetric(operatingMargin)}, net margin is ${formatPercentMetric(netMargin)}, and debt-to-equity is ${formatMetric(debtToEquity)}. ` +
+    `The investment case should be judged by whether growth and cash generation are strong enough to justify the current valuation and financial risk profile.`;
+
+  return {
+    summary,
+    bullCase: bullCase.length
+      ? bullCase
+      : [
+          "The available data does not show enough strong bullish evidence. Investors should wait for clearer signs of growth, margin expansion or cash-flow strength.",
+        ],
+    bearCase: bearCase.length
+      ? bearCase
+      : [
+          "The available data does not show a severe bearish signal, but valuation, growth consistency and balance-sheet quality should still be monitored.",
+        ],
+    fairValueView: valuationView,
+    catalysts: [
+      "Next earnings report and management guidance updates.",
+      "Revenue acceleration or slowdown versus market expectations.",
+      "Margin expansion, cost control or signs of operating leverage.",
+      "Changes in interest-rate expectations and broader equity risk appetite.",
+      "Company-specific product launches, AI initiatives, buybacks or capital allocation updates.",
+    ],
+    risks: [
+      "Valuation compression if growth expectations fall.",
+      "Margin pressure from weaker demand, higher costs or competition.",
+      "Balance-sheet stress if debt levels remain high or refinancing costs increase.",
+      "Negative earnings revisions after quarterly results.",
+      "Macro risk from rates, liquidity conditions and sector rotation.",
+    ],
+    valuationNotes: [
+      `Market cap: ${marketCap !== null ? formatMetric(marketCap) : "not available"}.`,
+      `Revenue: ${revenue !== null ? formatMetric(revenue) : "not available"}.`,
+      `EPS: ${eps !== null ? formatMetric(eps) : "not available"}.`,
+      `Free cash flow: ${freeCashFlow !== null ? formatMetric(freeCashFlow) : "not available"}.`,
+      `ROA/ROIC proxy: ${roic !== null ? formatPercentMetric(roic) : "not available"}.`,
+      `Dividend yield: ${dividendYield !== null ? formatPercentMetric(dividendYield) : "not available"}.`,
+    ],
+  };
+}
+
 async function fetchCoinMarketCapCrypto(symbol: string) {
   const apiKey = process.env.COINMARKETCAP_API_KEY;
 
   if (!apiKey) {
-    throw new Error("Липсва COINMARKETCAP_API_KEY");
+    throw new Error("Missing COINMARKETCAP_API_KEY");
   }
 
   const headers = {
@@ -206,13 +430,13 @@ async function fetchCoinMarketCapCrypto(symbol: string) {
 
   if (!quoteRes.ok) {
     throw new Error(
-      quoteJson?.status?.error_message || "Грешка при заявка към CoinMarketCap quotes."
+      quoteJson?.status?.error_message || "CoinMarketCap quote request failed."
     );
   }
 
   if (!infoRes.ok) {
     throw new Error(
-      infoJson?.status?.error_message || "Грешка при заявка към CoinMarketCap info."
+      infoJson?.status?.error_message || "CoinMarketCap info request failed."
     );
   }
 
@@ -224,7 +448,7 @@ async function fetchCoinMarketCapCrypto(symbol: string) {
     : (infoEntry as CmcInfo | undefined);
 
   if (!quoteData) {
-    throw new Error("Няма крипто данни за този символ.");
+    throw new Error("No crypto data found for this symbol.");
   }
 
   const usd = quoteData.quote?.USD;
@@ -249,12 +473,12 @@ async function fetchCoinMarketCapCrypto(symbol: string) {
     companyInfo: {
       symbol: quoteData.symbol || symbol,
       name: quoteData.name || symbol,
-      sector: "Криптовалута",
-      industry: infoData?.category || "Дигитални активи",
+      sector: "Cryptocurrency",
+      industry: infoData?.category || "Digital Assets",
       description:
-        infoData?.description || `${symbol} е криптовалута, търгувана спрямо USD.`,
+        infoData?.description || `${symbol} is a cryptocurrency traded against USD.`,
       website: infoData?.urls?.website?.[0] || null,
-      country: "Глобален пазар",
+      country: "Global market",
       exchange: "CoinMarketCap",
       currency: "USD",
     },
@@ -264,7 +488,7 @@ async function fetchCoinMarketCapCrypto(symbol: string) {
     operatingMargin: null,
     netMargin: null,
     debtToEquity: null,
-    purchaseSignal: "Високорисков актив",
+    purchaseSignal: "High-risk asset",
     aiScore: {
       score: 3,
       signal: "SELL",
@@ -277,21 +501,33 @@ async function fetchCoinMarketCapCrypto(symbol: string) {
     realValue: null,
     aiAnalysis: {
       summary:
-        `${quoteData.name || symbol} е криптовалута с висока волатилност. ` +
-        `Тук фокусът е върху ликвидност, пазарна капитализация, supply структура и momentum, ` +
-        `а не върху класически акционни метрики.`,
+        `${quoteData.name || symbol} is a high-volatility digital asset. The analysis focuses on liquidity, market capitalization, supply structure, dominance and momentum rather than traditional equity metrics such as EPS, P/E or margins.`,
       bullCase: [
-        "висока ликвидност",
-        "силно пазарно внимание",
-        "потенциал за резки движения нагоре",
+        "High liquidity can support efficient entry and exit for active traders.",
+        "Strong market attention can create upside momentum during crypto risk-on phases.",
+        "Large market capitalization may attract institutional flows compared with smaller digital assets.",
+        "Positive ETF, regulatory or adoption headlines can quickly re-rate sentiment.",
       ],
       bearCase: [
-        "висока волатилност",
-        "липса на традиционна фундаментална оценка",
-        "по-висок спекулативен риск",
+        "Crypto assets remain highly volatile and can experience sharp drawdowns.",
+        "There is no traditional fair value model comparable to equities.",
+        "Regulatory pressure, exchange risk and liquidity shocks can materially affect price.",
+        "Momentum can reverse quickly when leverage unwinds across the crypto market.",
       ],
       fairValueView:
-        "При криптовалутите няма класически модел за fair value като при акциите",
+        "For cryptocurrencies, fair value should be interpreted through liquidity, adoption, network effects, supply dynamics and market cycle positioning rather than a classic earnings-based model.",
+      catalysts: [
+        "ETF flow data and institutional allocation trends.",
+        "Regulatory decisions in major jurisdictions.",
+        "Network upgrades, adoption metrics and ecosystem growth.",
+        "Bitcoin dominance, stablecoin liquidity and broader risk appetite.",
+      ],
+      risks: [
+        "High volatility and forced liquidations.",
+        "Regulatory actions or exchange-specific stress.",
+        "Sharp liquidity contraction during risk-off markets.",
+        "Speculative positioning and leverage-driven reversals.",
+      ],
     },
     extraMetrics: {
       freeCashFlow: null,
@@ -334,7 +570,7 @@ export async function POST(req: Request) {
 
     if (!ticker || typeof ticker !== "string") {
       return NextResponse.json(
-        { error: "Липсва валиден тикер." },
+        { error: "Missing valid ticker." },
         { status: 400 }
       );
     }
@@ -350,7 +586,7 @@ export async function POST(req: Request) {
 
     if (userError || !user || !user.email) {
       return NextResponse.json(
-        { error: "Няма логнат потребител." },
+        { error: "No authenticated user." },
         { status: 401 }
       );
     }
@@ -360,7 +596,7 @@ export async function POST(req: Request) {
     if (!limitCheck.allowed) {
       return NextResponse.json(
         {
-          error: "Достигна дневния лимит за анализи.",
+          error: "Daily analysis limit reached.",
           plan: limitCheck.plan,
           dailyLimit: limitCheck.dailyLimit,
           usedToday: limitCheck.usedToday,
@@ -377,7 +613,7 @@ export async function POST(req: Request) {
 
     if (isCrypto && currentPlan !== "unlimited") {
       return NextResponse.json(
-        { error: "Криптовалутите са налични само в Unlimited плана." },
+        { error: "Cryptocurrency analysis is available only on the Unlimited plan." },
         { status: 403 }
       );
     }
@@ -428,7 +664,7 @@ export async function POST(req: Request) {
 
     const companyProfile = {
       symbol: quote.symbol || cleanTicker,
-      name: quote.shortName || quote.longName || "Няма данни",
+      name: quote.shortName || quote.longName || "No data",
       sector: summary.assetProfile?.sector || null,
       industry: summary.assetProfile?.industry || null,
       description: summary.assetProfile?.longBusinessSummary || null,
@@ -480,19 +716,6 @@ export async function POST(req: Request) {
           ? Number((eps * Math.min(peRatio, 20)).toFixed(2))
           : null;
 
-      const bullPoints: string[] = [];
-      const bearPoints: string[] = [];
-
-      if (roe !== null && roe >= 0.15) bullPoints.push("силна възвръщаемост на капитала");
-      if (operatingMargin !== null && operatingMargin >= 0.15) bullPoints.push("добър оперативен марж");
-      if (netMargin !== null && netMargin >= 0.1) bullPoints.push("стабилен нетен марж");
-      if (debtToEquity !== null && debtToEquity <= 1.0) bullPoints.push("контролируем дълг");
-
-      if (peRatio !== null && peRatio > 30) bearPoints.push("висока оценка спрямо печалбата");
-      if (debtToEquity !== null && debtToEquity > 2.0) bearPoints.push("повишена задлъжнялост");
-      if (operatingMargin !== null && operatingMargin < 0.08) bearPoints.push("слаб оперативен марж");
-      if (netMargin !== null && netMargin < 0.05) bearPoints.push("нисък нетен марж");
-
       const responsePayload = {
         ...basicPayload,
         tier: "pro",
@@ -500,29 +723,16 @@ export async function POST(req: Request) {
         marketCap,
         eps,
         realValue,
-        aiAnalysis: {
-          summary:
-            `${companyProfile.name} изглежда ` +
-            `${(realValue !== null && price !== null
-              ? price < realValue
-                ? "под справедливата стойност"
-                : price > realValue
-                ? "над справедливата стойност"
-                : "близо до справедливата стойност"
-              : "неутрално оценена")}. Основният фокус е върху ` +
-            `${bullPoints[0] || "качеството на бизнеса"} и ` +
-            `${bearPoints[0] || "оценката на акцията"}.`,
-          bullCase: bullPoints.length ? bullPoints : ["липсва силен положителен сигнал"],
-          bearCase: bearPoints.length ? bearPoints : ["липсва силен негативен сигнал"],
-          fairValueView:
-            realValue !== null && price !== null
-              ? price < realValue
-                ? "Изглежда под справедливата стойност"
-                : price > realValue
-                ? "Изглежда над справедливата стойност"
-                : "Близо е до справедливата стойност"
-              : "Недостатъчно данни за ясна оценка на справедливата стойност",
-        },
+        aiAnalysis: buildProAnalysis({
+          companyName: companyProfile.name,
+          price,
+          realValue,
+          peRatio,
+          roe,
+          operatingMargin,
+          netMargin,
+          debtToEquity,
+        }),
       };
 
       await incrementUsage(user.email);
@@ -549,12 +759,6 @@ export async function POST(req: Request) {
       toNumber(summary.summaryDetail?.dividendYield) ??
       toNumber(quote.trailingAnnualDividendYield);
 
-    const deepSignals: string[] = [];
-    if (freeCashFlow !== null && freeCashFlow > 0) deepSignals.push("положителен свободен паричен поток");
-    if (revenueGrowth !== null && revenueGrowth > 0.05) deepSignals.push("добър ръст на приходите");
-    if (earningsGrowth !== null && earningsGrowth > 0.05) deepSignals.push("добър ръст на печалбата");
-    if (currentRatio !== null && currentRatio >= 1) deepSignals.push("нормална краткосрочна ликвидност");
-
     const responsePayload = {
       ...basicPayload,
       tier: "unlimited",
@@ -562,25 +766,25 @@ export async function POST(req: Request) {
       marketCap,
       eps,
       realValue,
-      aiAnalysis: {
-        summary:
-          `${companyProfile.name} преминава разширен unlimited анализ ` +
-          `с акцент върху качество, растеж, ликвидност и оценка.`,
-        bullCase: deepSignals.length ? deepSignals : ["липсват достатъчно силни положителни сигнали"],
-        bearCase: [
-          peRatio !== null && peRatio > 30 ? "по-висока оценка" : null,
-          debtToEquity !== null && debtToEquity > 2 ? "по-висок финансов риск" : null,
-          netMargin !== null && netMargin < 0.05 ? "слаб нетен марж" : null,
-        ].filter(Boolean),
-        fairValueView:
-          realValue !== null && price !== null
-            ? price < realValue
-              ? "Под справедливата стойност"
-              : price > realValue
-              ? "Над справедливата стойност"
-              : "Близо до справедливата стойност"
-            : "Недостатъчно данни за fair value",
-      },
+      aiAnalysis: buildUnlimitedAnalysis({
+        companyName: companyProfile.name,
+        price,
+        realValue,
+        peRatio,
+        roe,
+        operatingMargin,
+        netMargin,
+        debtToEquity,
+        revenue,
+        marketCap,
+        eps,
+        freeCashFlow,
+        roic,
+        currentRatio,
+        revenueGrowth,
+        earningsGrowth,
+        dividendYield,
+      }),
       extraMetrics: {
         freeCashFlow,
         roic,
@@ -596,7 +800,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error("STOCK ROUTE ERROR:", error);
     return NextResponse.json(
-      { error: error?.message || "Грешка при stock анализа." },
+      { error: error?.message || "Stock analysis failed." },
       { status: 500 }
     );
   }
