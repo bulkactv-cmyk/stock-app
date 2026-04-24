@@ -17,11 +17,7 @@ type RsiRow = {
   rsi: Record<TimeframeKey, number | null>;
 };
 
-type RsiResponse = {
-  rows: RsiRow[];
-  updatedAt?: string;
-  error?: string;
-};
+const TIMEFRAMES: TimeframeKey[] = ["15m", "1h", "4h", "12h", "24h", "1w"];
 
 const TIMEFRAME_LABELS: Record<TimeframeKey, string> = {
   "15m": "15 Minutes",
@@ -32,11 +28,162 @@ const TIMEFRAME_LABELS: Record<TimeframeKey, string> = {
   "1w": "1 Week",
 };
 
+const BINANCE_INTERVALS: Record<TimeframeKey, string> = {
+  "15m": "15m",
+  "1h": "1h",
+  "4h": "4h",
+  "12h": "12h",
+  "24h": "1d",
+  "1w": "1w",
+};
+
+const COINS = [
+  { symbol: "BTC", name: "Bitcoin", pair: "BTCUSDT" },
+  { symbol: "ETH", name: "Ethereum", pair: "ETHUSDT" },
+  { symbol: "SOL", name: "Solana", pair: "SOLUSDT" },
+  { symbol: "XRP", name: "XRP", pair: "XRPUSDT" },
+  { symbol: "BNB", name: "BNB", pair: "BNBUSDT" },
+  { symbol: "DOGE", name: "Dogecoin", pair: "DOGEUSDT" },
+  { symbol: "ADA", name: "Cardano", pair: "ADAUSDT" },
+  { symbol: "AVAX", name: "Avalanche", pair: "AVAXUSDT" },
+  { symbol: "LINK", name: "Chainlink", pair: "LINKUSDT" },
+  { symbol: "DOT", name: "Polkadot", pair: "DOTUSDT" },
+  { symbol: "TRX", name: "TRON", pair: "TRXUSDT" },
+  { symbol: "TON", name: "Toncoin", pair: "TONUSDT" },
+  { symbol: "SHIB", name: "Shiba Inu", pair: "SHIBUSDT" },
+  { symbol: "BCH", name: "Bitcoin Cash", pair: "BCHUSDT" },
+  { symbol: "LTC", name: "Litecoin", pair: "LTCUSDT" },
+  { symbol: "UNI", name: "Uniswap", pair: "UNIUSDT" },
+];
+
+function getLogoUrl(symbol: string) {
+  return `https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/${symbol.toLowerCase()}.png`;
+}
+
+function emptyRsi(): Record<TimeframeKey, number | null> {
+  return { "15m": null, "1h": null, "4h": null, "12h": null, "24h": null, "1w": null };
+}
+
+function calculateRsi(closes: number[], period = 14): number | null {
+  if (closes.length < period + 1) return null;
+
+  let gains = 0;
+  let losses = 0;
+
+  for (let i = 1; i <= period; i++) {
+    const change = closes[i] - closes[i - 1];
+    if (change >= 0) gains += change;
+    else losses += Math.abs(change);
+  }
+
+  let avgGain = gains / period;
+  let avgLoss = losses / period;
+
+  for (let i = period + 1; i < closes.length; i++) {
+    const change = closes[i] - closes[i - 1];
+    const gain = change > 0 ? change : 0;
+    const loss = change < 0 ? Math.abs(change) : 0;
+
+    avgGain = (avgGain * (period - 1) + gain) / period;
+    avgLoss = (avgLoss * (period - 1) + loss) / period;
+  }
+
+  if (avgLoss === 0) return 100;
+
+  const rs = avgGain / avgLoss;
+  return Number((100 - 100 / (1 + rs)).toFixed(1));
+}
+
+async function fetchBinanceCloses(pair: string, timeframe: TimeframeKey) {
+  const interval = BINANCE_INTERVALS[timeframe];
+  const res = await fetch(
+    `https://api.binance.com/api/v3/klines?symbol=${pair}&interval=${interval}&limit=120`
+  );
+
+  if (!res.ok) throw new Error("Binance failed");
+
+  const data = await res.json();
+
+  return Array.isArray(data)
+    ? data
+        .map((row) => Number(row?.[4]))
+        .filter((value) => Number.isFinite(value))
+    : [];
+}
+
+function getCryptoCompareUrl(symbol: string, timeframe: TimeframeKey) {
+  const base = "https://min-api.cryptocompare.com/data";
+
+  if (timeframe === "15m") return `${base}/v2/histominute?fsym=${symbol}&tsym=USDT&limit=120&aggregate=15`;
+  if (timeframe === "1h") return `${base}/v2/histohour?fsym=${symbol}&tsym=USDT&limit=120&aggregate=1`;
+  if (timeframe === "4h") return `${base}/v2/histohour?fsym=${symbol}&tsym=USDT&limit=120&aggregate=4`;
+  if (timeframe === "12h") return `${base}/v2/histohour?fsym=${symbol}&tsym=USDT&limit=120&aggregate=12`;
+  if (timeframe === "24h") return `${base}/v2/histoday?fsym=${symbol}&tsym=USDT&limit=120&aggregate=1`;
+
+  return `${base}/v2/histoday?fsym=${symbol}&tsym=USDT&limit=120&aggregate=7`;
+}
+
+async function fetchCryptoCompareCloses(symbol: string, timeframe: TimeframeKey) {
+  const res = await fetch(getCryptoCompareUrl(symbol, timeframe));
+  if (!res.ok) throw new Error("CryptoCompare failed");
+
+  const data = await res.json();
+  const rows = data?.Data?.Data;
+
+  return Array.isArray(rows)
+    ? rows
+        .map((row) => Number(row?.close))
+        .filter((value) => Number.isFinite(value))
+    : [];
+}
+
+async function fetchCloses(symbol: string, pair: string, timeframe: TimeframeKey) {
+  try {
+    return await fetchBinanceCloses(pair, timeframe);
+  } catch {
+    return await fetchCryptoCompareCloses(symbol, timeframe);
+  }
+}
+
+async function buildClientRow(coin: (typeof COINS)[number]): Promise<RsiRow> {
+  const results = await Promise.all(
+    TIMEFRAMES.map(async (tf) => {
+      try {
+        const closes = await fetchCloses(coin.symbol, coin.pair, tf);
+        return {
+          tf,
+          price: closes.length ? closes[closes.length - 1] : null,
+          rsi: calculateRsi(closes),
+        };
+      } catch {
+        return { tf, price: null, rsi: null };
+      }
+    })
+  );
+
+  const rsi = emptyRsi();
+
+  results.forEach((item) => {
+    rsi[item.tf] = item.rsi;
+  });
+
+  return {
+    symbol: coin.symbol,
+    name: coin.name,
+    pair: coin.pair,
+    logoUrl: getLogoUrl(coin.symbol),
+    price: results.find((item) => item.price !== null)?.price ?? null,
+    rsi,
+  };
+}
+
+function hasRealRsi(rows: RsiRow[]) {
+  return rows.some((row) => TIMEFRAMES.some((tf) => typeof row.rsi?.[tf] === "number"));
+}
+
 function formatPrice(value: number | null | undefined) {
   if (value === null || value === undefined || Number.isNaN(value)) return "—";
-  if (value >= 1000) {
-    return `$${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
-  }
+  if (value >= 1000) return `$${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
   if (value >= 1) return `$${value.toFixed(2)}`;
   return `$${value.toFixed(4)}`;
 }
@@ -56,9 +203,7 @@ function getRsiColor(value: number | null | undefined) {
 }
 
 function getRsiBackground(value: number | null | undefined) {
-  if (value === null || value === undefined || Number.isNaN(value)) {
-    return "rgba(255,255,255,0.04)";
-  }
+  if (value === null || value === undefined || Number.isNaN(value)) return "rgba(255,255,255,0.04)";
   if (value >= 70) return "rgba(239,68,68,0.18)";
   if (value >= 60) return "rgba(127,29,29,0.25)";
   if (value >= 40) return "rgba(255,255,255,0.03)";
@@ -73,26 +218,13 @@ function getSafeSortNumber(value: number | null | undefined, direction: SortDire
   return value;
 }
 
-function AssetLogo({
-  symbol,
-  name,
-  logoUrl,
-}: {
-  symbol: string;
-  name: string;
-  logoUrl: string;
-}) {
+function AssetLogo({ symbol, name, logoUrl }: { symbol: string; name: string; logoUrl: string }) {
   const [imgError, setImgError] = useState(false);
 
   return (
     <div style={styles.logoHolder} title={name}>
       {!imgError ? (
-        <img
-          src={logoUrl}
-          alt={name}
-          style={styles.logoImage}
-          onError={() => setImgError(true)}
-        />
+        <img src={logoUrl} alt={name} style={styles.logoImage} onError={() => setImgError(true)} />
       ) : (
         <div style={styles.logoFallback}>{symbol.slice(0, 1)}</div>
       )}
@@ -100,22 +232,8 @@ function AssetLogo({
   );
 }
 
-function SortArrow({
-  active,
-  direction,
-}: {
-  active: boolean;
-  direction: SortDirection;
-}) {
-  if (!active) {
-    return <span style={styles.sortArrowInactive}>↕</span>;
-  }
-
-  return (
-    <span style={styles.sortArrowActive}>
-      {direction === "asc" ? "↑" : "↓"}
-    </span>
-  );
+function SortArrow({ active, direction }: { active: boolean; direction: SortDirection }) {
+  return <span style={active ? styles.sortArrowActive : styles.sortArrowInactive}>{active ? (direction === "asc" ? "↑" : "↓") : "↕"}</span>;
 }
 
 export default function PremiumRsiPage() {
@@ -126,8 +244,9 @@ export default function PremiumRsiPage() {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<RsiRow[]>([]);
   const [selectedTimeframe, setSelectedTimeframe] = useState<TimeframeKey>("15m");
-  const [updatedAt, setUpdatedAt] = useState<string>("");
+  const [updatedAt, setUpdatedAt] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [dataSource, setDataSource] = useState("Зареждане...");
 
   const [sortColumn, setSortColumn] = useState<SortColumn>("15m");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
@@ -148,13 +267,13 @@ export default function PremiumRsiPage() {
         return;
       }
 
-      const { data: planData, error: planError } = await supabase
+      const { data: planData, error } = await supabase
         .from("user_plans")
         .select("plan, access_active")
         .eq("email", user.email)
         .single();
 
-      if (planError || !planData) {
+      if (error || !planData) {
         setPlan("error");
         setLoading(false);
         return;
@@ -163,12 +282,11 @@ export default function PremiumRsiPage() {
       let currentPlan = planData.plan as PlanType;
       const isActive = planData.access_active === true;
 
-      setAccessActive(isActive);
-
       if ((currentPlan === "pro" || currentPlan === "unlimited") && !isActive) {
         currentPlan = "basic";
       }
 
+      setAccessActive(isActive);
       setPlan(currentPlan);
       setLoading(false);
     };
@@ -188,28 +306,51 @@ export default function PremiumRsiPage() {
 
     const loadRsi = async (background = false) => {
       try {
-        if (background) {
-          setIsRefreshing(true);
-        }
+        if (background) setIsRefreshing(true);
 
-        const res = await fetch("/api/rsi-stats", { cache: "no-store" });
-        const data = (await res.json()) as RsiResponse;
+        let apiRows: RsiRow[] = [];
 
-        if (!res.ok || data.error) {
-          console.error(data.error || "RSI fetch error");
+        try {
+          const res = await fetch("/api/rsi-stats", { cache: "no-store" });
+          const data = await res.json();
+
+          if (res.ok && Array.isArray(data?.rows)) {
+            apiRows = data.rows;
+          }
+        } catch {}
+
+        if (hasRealRsi(apiRows)) {
+          if (mounted) {
+            setRows(apiRows);
+            setUpdatedAt(new Date().toISOString());
+            setDataSource("API");
+          }
           return;
         }
 
+        const clientRows = await Promise.all(COINS.map(buildClientRow));
+
         if (mounted) {
-          setRows(Array.isArray(data.rows) ? data.rows : []);
-          setUpdatedAt(data.updatedAt || "");
+          setRows(clientRows);
+          setUpdatedAt(new Date().toISOString());
+          setDataSource("Client fallback");
         }
       } catch (error) {
-        console.error("RSI fetch error:", error);
-      } finally {
-        if (background && mounted) {
-          setIsRefreshing(false);
+        console.error("RSI load error:", error);
+
+        if (mounted) {
+          setRows(
+            COINS.map((coin) => ({
+              ...coin,
+              logoUrl: getLogoUrl(coin.symbol),
+              price: null,
+              rsi: emptyRsi(),
+            }))
+          );
+          setDataSource("Грешка при зареждане");
         }
+      } finally {
+        if (mounted) setIsRefreshing(false);
       }
     };
 
@@ -217,7 +358,7 @@ export default function PremiumRsiPage() {
 
     const interval = setInterval(() => {
       loadRsi(true);
-    }, 15000);
+    }, 60000);
 
     return () => {
       mounted = false;
@@ -230,25 +371,20 @@ export default function PremiumRsiPage() {
 
     cloned.sort((a, b) => {
       if (sortColumn === "symbol") {
-        const aValue = a.symbol.toUpperCase();
-        const bValue = b.symbol.toUpperCase();
-
-        if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
-        if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
-        return 0;
+        return sortDirection === "asc"
+          ? a.symbol.localeCompare(b.symbol)
+          : b.symbol.localeCompare(a.symbol);
       }
 
       if (sortColumn === "price") {
-        const aValue = getSafeSortNumber(a.price, sortDirection);
-        const bValue = getSafeSortNumber(b.price, sortDirection);
-
-        return sortDirection === "asc" ? aValue - bValue : bValue - aValue;
+        const av = getSafeSortNumber(a.price, sortDirection);
+        const bv = getSafeSortNumber(b.price, sortDirection);
+        return sortDirection === "asc" ? av - bv : bv - av;
       }
 
-      const aValue = getSafeSortNumber(a.rsi[sortColumn], sortDirection);
-      const bValue = getSafeSortNumber(b.rsi[sortColumn], sortDirection);
-
-      return sortDirection === "asc" ? aValue - bValue : bValue - aValue;
+      const av = getSafeSortNumber(a.rsi[sortColumn], sortDirection);
+      const bv = getSafeSortNumber(b.rsi[sortColumn], sortDirection);
+      return sortDirection === "asc" ? av - bv : bv - av;
     });
 
     return cloned;
@@ -267,7 +403,6 @@ export default function PremiumRsiPage() {
   if (loading) {
     return (
       <main style={styles.page}>
-        <div style={styles.overlay} />
         <div style={styles.wrapper}>
           <div style={styles.loadingCard}>Зареждане...</div>
         </div>
@@ -278,35 +413,15 @@ export default function PremiumRsiPage() {
   if (!isPremium) {
     return (
       <main style={styles.page}>
-        <div style={styles.overlay} />
         <div style={styles.wrapper}>
           <div style={styles.lockedCard}>
             <h1 style={styles.title}>RSI Premium</h1>
-            <p style={styles.lockedText}>
-              RSI Heatmap и RSI Table са достъпни само за <strong>PRO</strong> и{" "}
-              <strong>UNLIMITED</strong>.
-            </p>
-            <p style={styles.lockedSubtext}>
-              Ъпгрейдни плана си, за да виждаш реални RSI стойности по множество
-              таймфреймове и да следиш прегряване или препродаденост на пазара.
-            </p>
-
+            <p style={styles.lockedText}>RSI Heatmap и RSI Table са достъпни само за PRO и UNLIMITED.</p>
             <div style={styles.lockedButtons}>
-              <button
-                style={styles.primaryButton}
-                onClick={() => {
-                  window.location.href = "/pricing";
-                }}
-              >
+              <button style={styles.primaryButton} onClick={() => (window.location.href = "/pricing")}>
                 Upgrade
               </button>
-
-              <button
-                style={styles.secondaryButton}
-                onClick={() => {
-                  window.location.href = "/dashboard";
-                }}
-              >
+              <button style={styles.secondaryButton} onClick={() => (window.location.href = "/dashboard")}>
                 Назад
               </button>
             </div>
@@ -318,27 +433,16 @@ export default function PremiumRsiPage() {
 
   return (
     <main style={styles.page}>
-      <div style={styles.overlay} />
-
       <div style={styles.wrapper}>
         <div style={styles.header}>
           <div>
             <h1 style={styles.title}>RSI Stats</h1>
-            <p style={styles.subtitle}>
-              Реални RSI стойности за водещи криптовалути по няколко таймфрейма.
-            </p>
+            <p style={styles.subtitle}>Реални RSI стойности за водещи криптовалути по няколко таймфрейма.</p>
           </div>
 
-          <div style={styles.headerButtons}>
-            <button
-              style={styles.secondaryButton}
-              onClick={() => {
-                window.location.href = "/dashboard";
-              }}
-            >
-              Назад към Dashboard
-            </button>
-          </div>
+          <button style={styles.secondaryButton} onClick={() => (window.location.href = "/dashboard")}>
+            Назад към Dashboard
+          </button>
         </div>
 
         <div style={styles.topMetaRow}>
@@ -348,12 +452,9 @@ export default function PremiumRsiPage() {
           </div>
 
           <div style={styles.updateTextWrap}>
-            <div style={styles.updateText}>
-              Обновено: {updatedAt ? new Date(updatedAt).toLocaleString() : "—"}
-            </div>
-            <div style={styles.refreshBadge}>
-              {isRefreshing ? "Обновяване..." : "Auto refresh: 15s"}
-            </div>
+            <div style={styles.updateText}>Обновено: {updatedAt ? new Date(updatedAt).toLocaleString() : "—"}</div>
+            <div style={styles.refreshBadge}>{isRefreshing ? "Обновяване..." : "Auto refresh: 60s"}</div>
+            <div style={styles.refreshBadge}>Source: {dataSource}</div>
           </div>
         </div>
 
@@ -362,7 +463,7 @@ export default function PremiumRsiPage() {
             <h2 style={styles.sectionTitle}>RSI Heatmap</h2>
 
             <div style={styles.tabs}>
-              {(Object.keys(TIMEFRAME_LABELS) as TimeframeKey[]).map((tf) => (
+              {TIMEFRAMES.map((tf) => (
                 <button
                   key={tf}
                   type="button"
@@ -378,152 +479,61 @@ export default function PremiumRsiPage() {
             </div>
           </div>
 
-          <div style={styles.heatmapWrap}>
-            <div style={styles.heatmapArea}>
-              <div style={{ ...styles.band, ...styles.bandTop }} />
-              <div style={{ ...styles.band, ...styles.bandUpper }} />
-              <div style={{ ...styles.band, ...styles.bandMiddle }} />
-              <div style={{ ...styles.band, ...styles.bandLower }} />
-              <div style={{ ...styles.band, ...styles.bandBottom }} />
+          <div style={styles.heatmapArea}>
+            <div style={{ ...styles.band, ...styles.bandTop }} />
+            <div style={{ ...styles.band, ...styles.bandUpper }} />
+            <div style={{ ...styles.band, ...styles.bandMiddle }} />
+            <div style={{ ...styles.band, ...styles.bandLower }} />
+            <div style={{ ...styles.band, ...styles.bandBottom }} />
 
-              {[0, 20, 40, 60, 80, 100].map((value) => (
+            {[0, 20, 40, 60, 80, 100].map((value) => (
+              <div key={value} style={{ ...styles.axisLine, bottom: `${value}%` }}>
+                <span style={styles.axisLabel}>{value}</span>
+              </div>
+            ))}
+
+            {sortedRows.map((row, index) => {
+              const value = row.rsi[selectedTimeframe];
+              const safeValue = value ?? 50;
+              const left = ((index + 1) / (sortedRows.length + 1)) * 100;
+
+              return (
                 <div
-                  key={value}
-                  style={{
-                    ...styles.axisLine,
-                    bottom: `${value}%`,
-                  }}
+                  key={`${row.symbol}-${selectedTimeframe}`}
+                  style={{ ...styles.pointWrap, left: `${left}%`, bottom: `${safeValue}%` }}
+                  title={`${row.symbol} • RSI ${formatRsi(value)}`}
                 >
-                  <span style={styles.axisLabel}>{value}</span>
+                  <div style={styles.pointLabel}>{row.symbol}</div>
+                  <div style={{ ...styles.pointDot, borderColor: getRsiColor(value) }} />
+                  <div style={{ ...styles.pointStem, background: getRsiColor(value) }} />
                 </div>
-              ))}
-
-              {sortedRows.map((row, index) => {
-                const value = row.rsi[selectedTimeframe];
-                const safeValue = value ?? 50;
-                const left = ((index + 1) / (sortedRows.length + 1)) * 100;
-
-                return (
-                  <div
-                    key={`${row.symbol}-${selectedTimeframe}`}
-                    style={{
-                      ...styles.pointWrap,
-                      left: `${left}%`,
-                      bottom: `${safeValue}%`,
-                    }}
-                    title={`${row.symbol} • RSI ${formatRsi(value)}`}
-                  >
-                    <div style={styles.pointLabel}>{row.symbol}</div>
-                    <div
-                      style={{
-                        ...styles.pointDot,
-                        borderColor: getRsiColor(value),
-                      }}
-                    />
-                    <div
-                      style={{
-                        ...styles.pointStem,
-                        background: getRsiColor(value),
-                      }}
-                    />
-                  </div>
-                );
-              })}
-            </div>
+              );
+            })}
           </div>
         </div>
 
         <div style={styles.sectionCard}>
           <div style={styles.sectionHeader}>
             <h2 style={styles.sectionTitle}>RSI Table</h2>
-            <div style={styles.tableInfo}>
-              Кликни върху заглавие на колона за сортиране
-            </div>
+            <div style={styles.tableInfo}>Кликни върху заглавие на колона за сортиране</div>
           </div>
 
           <div style={styles.tableWrap}>
             <table style={styles.table}>
               <thead>
                 <tr>
-                  <th style={styles.th}>
-                    <button style={styles.thButton} onClick={() => handleSort("symbol")}>
-                      Symbol
-                      <SortArrow
-                        active={sortColumn === "symbol"}
-                        direction={sortDirection}
-                      />
-                    </button>
-                  </th>
-
-                  <th style={styles.th}>
-                    <button style={styles.thButton} onClick={() => handleSort("price")}>
-                      Price
-                      <SortArrow
-                        active={sortColumn === "price"}
-                        direction={sortDirection}
-                      />
-                    </button>
-                  </th>
-
-                  <th style={styles.th}>
-                    <button style={styles.thButton} onClick={() => handleSort("15m")}>
-                      RSI 15 Min
-                      <SortArrow
-                        active={sortColumn === "15m"}
-                        direction={sortDirection}
-                      />
-                    </button>
-                  </th>
-
-                  <th style={styles.th}>
-                    <button style={styles.thButton} onClick={() => handleSort("1h")}>
-                      RSI 1 Hr
-                      <SortArrow
-                        active={sortColumn === "1h"}
-                        direction={sortDirection}
-                      />
-                    </button>
-                  </th>
-
-                  <th style={styles.th}>
-                    <button style={styles.thButton} onClick={() => handleSort("4h")}>
-                      RSI 4 Hrs
-                      <SortArrow
-                        active={sortColumn === "4h"}
-                        direction={sortDirection}
-                      />
-                    </button>
-                  </th>
-
-                  <th style={styles.th}>
-                    <button style={styles.thButton} onClick={() => handleSort("12h")}>
-                      RSI 12 Hrs
-                      <SortArrow
-                        active={sortColumn === "12h"}
-                        direction={sortDirection}
-                      />
-                    </button>
-                  </th>
-
-                  <th style={styles.th}>
-                    <button style={styles.thButton} onClick={() => handleSort("24h")}>
-                      RSI 24 Hrs
-                      <SortArrow
-                        active={sortColumn === "24h"}
-                        direction={sortDirection}
-                      />
-                    </button>
-                  </th>
-
-                  <th style={styles.th}>
-                    <button style={styles.thButton} onClick={() => handleSort("1w")}>
-                      RSI 1 Wk
-                      <SortArrow
-                        active={sortColumn === "1w"}
-                        direction={sortDirection}
-                      />
-                    </button>
-                  </th>
+                  {(["symbol", "price", ...TIMEFRAMES] as SortColumn[]).map((col) => (
+                    <th key={col} style={styles.th}>
+                      <button style={styles.thButton} onClick={() => handleSort(col)}>
+                        {col === "symbol"
+                          ? "Symbol"
+                          : col === "price"
+                          ? "Price"
+                          : `RSI ${TIMEFRAME_LABELS[col as TimeframeKey]}`}
+                        <SortArrow active={sortColumn === col} direction={sortDirection} />
+                      </button>
+                    </th>
+                  ))}
                 </tr>
               </thead>
 
@@ -532,11 +542,7 @@ export default function PremiumRsiPage() {
                   <tr key={row.symbol}>
                     <td style={styles.td}>
                       <div style={styles.symbolCell}>
-                        <AssetLogo
-                          symbol={row.symbol}
-                          name={row.name}
-                          logoUrl={row.logoUrl}
-                        />
+                        <AssetLogo symbol={row.symbol} name={row.name} logoUrl={row.logoUrl} />
                         <div>
                           <div style={styles.symbolMain}>{row.symbol}</div>
                           <div style={styles.symbolSub}>{row.name}</div>
@@ -546,21 +552,19 @@ export default function PremiumRsiPage() {
 
                     <td style={styles.td}>{formatPrice(row.price)}</td>
 
-                    {(["15m", "1h", "4h", "12h", "24h", "1w"] as TimeframeKey[]).map(
-                      (tf) => (
-                        <td key={tf} style={styles.td}>
-                          <span
-                            style={{
-                              ...styles.rsiBadge,
-                              background: getRsiBackground(row.rsi[tf]),
-                              color: getRsiColor(row.rsi[tf]),
-                            }}
-                          >
-                            {formatRsi(row.rsi[tf])}
-                          </span>
-                        </td>
-                      )
-                    )}
+                    {TIMEFRAMES.map((tf) => (
+                      <td key={tf} style={styles.td}>
+                        <span
+                          style={{
+                            ...styles.rsiBadge,
+                            background: getRsiBackground(row.rsi[tf]),
+                            color: getRsiColor(row.rsi[tf]),
+                          }}
+                        >
+                          {formatRsi(row.rsi[tf])}
+                        </span>
+                      </td>
+                    ))}
                   </tr>
                 ))}
               </tbody>
@@ -569,38 +573,14 @@ export default function PremiumRsiPage() {
         </div>
 
         <div style={styles.sectionCard}>
-          <div style={styles.sectionHeader}>
-            <h2 style={styles.sectionTitle}>Какво е RSI Heatmap?</h2>
-          </div>
-
+          <h2 style={styles.sectionTitle}>Какво е RSI Heatmap?</h2>
           <div style={styles.explainerText}>
             <p>
-              <strong>RSI (Relative Strength Index)</strong> е един от най-използваните
-              технически индикатори за измерване на силата и скоростта на движението
-              в цената. Той се движи в диапазон от <strong>0 до 100</strong> и помага
-              да се оцени дали даден актив е прекалено купуван или прекалено
-              разпродаван.
+              <strong>RSI</strong> измерва силата на движението в диапазон от 0 до 100.
+              Над 70 често означава свръхкупен актив, а под 30 — свръхпродаден.
             </p>
-
             <p>
-              При стойности <strong>над 70</strong> активът често се разглежда като
-              <strong> свръхкупен</strong>, а при стойности <strong>под 30</strong> –
-              като <strong>свръхпродаден</strong>. Това не е самостоятелен сигнал за
-              покупка или продажба, а инструмент за контекст и моментум.
-            </p>
-
-            <p>
-              <strong>RSI Heatmap</strong> визуализира бързо къде се намират
-              различните активи спрямо тези зони. Така можеш моментално да видиш
-              кои криптовалути са по-близо до прегряване и кои са по-близо до
-              потенциално възстановяване.
-            </p>
-
-            <p>
-              <strong>RSI Table</strong> показва същите RSI стойности по няколко
-              таймфрейма – 15 минути, 1 час, 4 часа, 12 часа, 24 часа и 1 седмица.
-              Това ти позволява да следиш не само краткосрочното състояние, но и
-              дали инерцията се изгражда или отслабва в по-широка времева рамка.
+              Тази таблица показва RSI по няколко таймфрейма, за да виждаш краткосрочен и по-широк моментум.
             </p>
           </div>
         </div>
@@ -612,21 +592,10 @@ export default function PremiumRsiPage() {
 const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: "100vh",
-    position: "relative",
-    background:
-      "radial-gradient(circle at top, #171000 0%, #0c0b06 35%, #050505 100%)",
+    background: "radial-gradient(circle at top, #171000 0%, #0c0b06 35%, #050505 100%)",
     padding: "32px 18px 50px",
-    overflow: "hidden",
-  },
-  overlay: {
-    position: "absolute",
-    inset: 0,
-    background: "rgba(0,0,0,0.18)",
-    backdropFilter: "blur(2px)",
   },
   wrapper: {
-    position: "relative",
-    zIndex: 1,
     maxWidth: "1280px",
     margin: "0 auto",
   },
@@ -647,24 +616,15 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "36px",
     maxWidth: "820px",
     margin: "40px auto",
-    boxShadow: "0 22px 60px rgba(0,0,0,0.45)",
   },
   lockedText: {
     color: "white",
     fontSize: "18px",
     lineHeight: 1.7,
-    marginBottom: "12px",
-  },
-  lockedSubtext: {
-    color: "#b7b7b7",
-    fontSize: "15px",
-    lineHeight: 1.8,
-    marginBottom: "24px",
   },
   lockedButtons: {
     display: "flex",
     gap: "12px",
-    flexWrap: "wrap",
   },
   header: {
     display: "flex",
@@ -684,11 +644,6 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#c1b8aa",
     fontSize: "16px",
     margin: 0,
-  },
-  headerButtons: {
-    display: "flex",
-    gap: "10px",
-    flexWrap: "wrap",
   },
   topMetaRow: {
     display: "flex",
@@ -715,14 +670,12 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#facc15",
     fontSize: "12px",
     fontWeight: 800,
-    letterSpacing: "0.4px",
   },
   premiumDot: {
     width: "8px",
     height: "8px",
     borderRadius: "999px",
     background: "#22c55e",
-    boxShadow: "0 0 0 4px rgba(34,197,94,0.12)",
   },
   updateText: {
     color: "#9ca3af",
@@ -742,7 +695,6 @@ const styles: Record<string, React.CSSProperties> = {
     border: "1px solid rgba(245,158,11,0.12)",
     borderRadius: "18px",
     padding: "18px",
-    boxShadow: "0 18px 40px rgba(0,0,0,0.32)",
     marginBottom: "18px",
   },
   sectionHeader: {
@@ -783,9 +735,6 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#fbbf24",
     border: "1px solid rgba(245,158,11,0.35)",
   },
-  heatmapWrap: {
-    padding: "8px 0 4px",
-  },
   heatmapArea: {
     position: "relative",
     height: "560px",
@@ -799,31 +748,11 @@ const styles: Record<string, React.CSSProperties> = {
     left: 0,
     width: "100%",
   },
-  bandTop: {
-    top: 0,
-    height: "20%",
-    background: "rgba(127,29,29,0.72)",
-  },
-  bandUpper: {
-    top: "20%",
-    height: "20%",
-    background: "rgba(55,6,23,0.62)",
-  },
-  bandMiddle: {
-    top: "40%",
-    height: "20%",
-    background: "rgba(15,23,42,0.78)",
-  },
-  bandLower: {
-    top: "60%",
-    height: "20%",
-    background: "rgba(4,47,46,0.72)",
-  },
-  bandBottom: {
-    top: "80%",
-    height: "20%",
-    background: "rgba(20,83,45,0.78)",
-  },
+  bandTop: { top: 0, height: "20%", background: "rgba(127,29,29,0.72)" },
+  bandUpper: { top: "20%", height: "20%", background: "rgba(55,6,23,0.62)" },
+  bandMiddle: { top: "40%", height: "20%", background: "rgba(15,23,42,0.78)" },
+  bandLower: { top: "60%", height: "20%", background: "rgba(4,47,46,0.72)" },
+  bandBottom: { top: "80%", height: "20%", background: "rgba(20,83,45,0.78)" },
   axisLine: {
     position: "absolute",
     left: 0,
@@ -849,8 +778,6 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#e5e7eb",
     fontSize: "12px",
     fontWeight: 700,
-    marginBottom: "2px",
-    textShadow: "0 1px 6px rgba(0,0,0,0.8)",
   },
   pointDot: {
     width: "14px",
@@ -858,7 +785,6 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: "999px",
     background: "#111827",
     border: "3px solid #e5e7eb",
-    boxShadow: "0 0 0 4px rgba(0,0,0,0.18)",
   },
   pointStem: {
     width: "2px",
@@ -875,10 +801,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   th: {
     textAlign: "left",
-    padding: "0",
-    color: "white",
-    fontSize: "14px",
-    fontWeight: 800,
+    padding: 0,
     borderBottom: "1px solid rgba(255,255,255,0.08)",
     background: "rgba(255,255,255,0.02)",
   },
@@ -922,7 +845,6 @@ const styles: Record<string, React.CSSProperties> = {
     color: "white",
     fontSize: "14px",
     fontWeight: 800,
-    marginBottom: "2px",
   },
   symbolSub: {
     color: "#9ca3af",
