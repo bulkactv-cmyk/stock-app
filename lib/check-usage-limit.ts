@@ -1,57 +1,57 @@
 import { createClient } from "./supabase/server";
-
-type PlanName = "basic" | "pro" | "unlimited";
+import {
+  getDailyLimit,
+  normalizePlan,
+  type UserPlan,
+} from "./plan-limits";
 
 type UsageLimitResult = {
   allowed: boolean;
-  plan: PlanName;
+  plan: UserPlan;
   accessActive: boolean;
   dailyLimit: number;
   usedToday: number;
   remainingToday: number;
 };
 
-function getDailyLimit(plan: PlanName, accessActive: boolean) {
-  if (plan === "unlimited") return 999999;
-  if (plan === "pro") return 20;
-
-  // basic
-  if (accessActive) return 10;
-
-  // visitor
-  return 5;
+function getTodayDate(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
-export async function checkUsageLimit(email: string): Promise<UsageLimitResult> {
+export async function checkUsageLimit(
+  email: string
+): Promise<UsageLimitResult> {
   const supabase = await createClient();
+
+  const cleanEmail = email.trim().toLowerCase();
+
+  if (!cleanEmail) {
+    throw new Error("Липсва имейл на потребителя.");
+  }
 
   const { data: planData, error: planError } = await supabase
     .from("user_plans")
     .select("plan, access_active")
-    .eq("email", email)
-    .single();
+    .eq("email", cleanEmail)
+    .maybeSingle();
 
-  if (planError || !planData) {
+  if (planError) {
     throw new Error("Не успях да заредя плана на потребителя.");
   }
 
-  let currentPlan = String(planData.plan || "basic").toLowerCase() as PlanName;
-  const accessActive = planData.access_active === true;
-
-  if (currentPlan !== "basic" && currentPlan !== "pro" && currentPlan !== "unlimited") {
-    currentPlan = "basic";
-  }
+  let currentPlan = normalizePlan(planData?.plan);
+  const accessActive = planData?.access_active === true;
 
   if ((currentPlan === "pro" || currentPlan === "unlimited") && !accessActive) {
     currentPlan = "basic";
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayDate();
 
   const { data: usageData, error: usageError } = await supabase
     .from("daily_usage")
     .select("analyses_used")
-    .eq("email", email)
+    .eq("email", cleanEmail)
     .eq("usage_date", today)
     .maybeSingle();
 
@@ -61,7 +61,9 @@ export async function checkUsageLimit(email: string): Promise<UsageLimitResult> 
 
   const usedToday = usageData?.analyses_used ?? 0;
   const dailyLimit = getDailyLimit(currentPlan, accessActive);
-  const remainingToday = Math.max(dailyLimit - usedToday, 0);
+
+  const remainingToday =
+    dailyLimit === Infinity ? Infinity : Math.max(dailyLimit - usedToday, 0);
 
   return {
     allowed: remainingToday > 0,
@@ -73,14 +75,21 @@ export async function checkUsageLimit(email: string): Promise<UsageLimitResult> 
   };
 }
 
-export async function incrementUsage(email: string) {
+export async function incrementUsage(email: string): Promise<number> {
   const supabase = await createClient();
-  const today = new Date().toISOString().slice(0, 10);
+
+  const cleanEmail = email.trim().toLowerCase();
+
+  if (!cleanEmail) {
+    throw new Error("Липсва имейл на потребителя.");
+  }
+
+  const today = getTodayDate();
 
   const { data: existingRow, error: readError } = await supabase
     .from("daily_usage")
     .select("id, analyses_used")
-    .eq("email", email)
+    .eq("email", cleanEmail)
     .eq("usage_date", today)
     .maybeSingle();
 
@@ -90,7 +99,7 @@ export async function incrementUsage(email: string) {
 
   if (!existingRow) {
     const { error: insertError } = await supabase.from("daily_usage").insert({
-      email,
+      email: cleanEmail,
       usage_date: today,
       analyses_used: 1,
     });

@@ -5,26 +5,46 @@ import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
+const PRICE_TO_PLAN: Record<string, "basic" | "pro" | "unlimited"> = {
+  "price_1TPlmj9bv613l0cODWDSH8ka": "basic",
+  "price_1TPlnR9bv613l0cOtOEeMEAo": "pro",
+  "price_1TPlnq9bv613l0cO5lm1X2qG": "unlimited",
+};
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL as string,
-  process.env.SUPABASE_SERVICE_ROLE_KEY as string,
-  {
+function getStripeClient() {
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+
+  if (!stripeSecretKey) {
+    throw new Error("Missing STRIPE_SECRET_KEY.");
+  }
+
+  return new Stripe(stripeSecretKey);
+}
+
+function getSupabaseAdmin() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl) {
+    throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL.");
+  }
+
+  if (!serviceRoleKey) {
+    throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY.");
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
     },
-  }
-);
+  });
+}
 
-const PRICE_TO_PLAN: Record<string, "basic" | "pro" | "unlimited"> = {
-  "price_1TOybBQ392LlwhIsgpgzoYN1": "basic",
-  "price_1TOgK5Q392LlwhIs82KhiJLI": "pro",
-  "price_1TOcuRQ392LlwhIspEnHjxhg": "unlimited",
-};
-
-async function getCustomerEmail(customerId: string | null | undefined) {
+async function getCustomerEmail(
+  stripe: Stripe,
+  customerId: string | null | undefined
+) {
   if (!customerId) return null;
 
   const customer = await stripe.customers.retrieve(customerId);
@@ -41,37 +61,45 @@ async function getCustomerEmail(customerId: string | null | undefined) {
 }
 
 export async function POST(req: Request) {
-  const body = await req.text();
-  const headersList = await headers();
-  const signature = headersList.get("stripe-signature");
-
-  if (!signature) {
-    return NextResponse.json(
-      { error: "Missing Stripe signature." },
-      { status: 400 }
-    );
-  }
-
-  let event: Stripe.Event;
-
   try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET as string
-    );
-  } catch (error: unknown) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Webhook signature verification failed.";
+    const stripe = getStripeClient();
+    const supabaseAdmin = getSupabaseAdmin();
 
-    console.error("STRIPE SIGNATURE ERROR:", message);
+    const body = await req.text();
+    const headersList = await headers();
+    const signature = headersList.get("stripe-signature");
 
-    return NextResponse.json({ error: message }, { status: 400 });
-  }
+    if (!signature) {
+      return NextResponse.json(
+        { error: "Missing Stripe signature." },
+        { status: 400 }
+      );
+    }
 
-  try {
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+      return NextResponse.json(
+        { error: "Missing STRIPE_WEBHOOK_SECRET." },
+        { status: 500 }
+      );
+    }
+
+    let event: Stripe.Event;
+
+    try {
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Webhook signature verification failed.";
+
+      console.error("STRIPE SIGNATURE ERROR:", message);
+
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
 
@@ -89,19 +117,28 @@ export async function POST(req: Request) {
       } else if (fullSession.customer_email) {
         email = fullSession.customer_email;
       } else if (typeof fullSession.customer === "string") {
-        email = await getCustomerEmail(fullSession.customer);
-      } else if (
-        fullSession.customer &&
-        "email" in fullSession.customer
-      ) {
+        email = await getCustomerEmail(stripe, fullSession.customer);
+      } else if (fullSession.customer && "email" in fullSession.customer) {
         email = fullSession.customer.email || null;
       }
+
+      const stripeCustomerId =
+        typeof fullSession.customer === "string"
+          ? fullSession.customer
+          : fullSession.customer?.id || null;
+
+      const stripeSubscriptionId =
+        typeof fullSession.subscription === "string"
+          ? fullSession.subscription
+          : fullSession.subscription?.id || null;
 
       console.log("CHECKOUT SESSION:", {
         sessionId: session.id,
         email,
         priceId,
         plan,
+        stripeCustomerId,
+        stripeSubscriptionId,
       });
 
       if (!email || !plan) {
@@ -116,9 +153,11 @@ export async function POST(req: Request) {
 
       const { error } = await supabaseAdmin.from("user_plans").upsert(
         {
-          email,
+          email: email.toLowerCase(),
           plan,
           access_active: true,
+          stripe_customer_id: stripeCustomerId,
+          stripe_subscription_id: stripeSubscriptionId,
         },
         { onConflict: "email" }
       );
@@ -135,13 +174,13 @@ export async function POST(req: Request) {
       const customerId =
         typeof invoice.customer === "string" ? invoice.customer : null;
 
-      const email = await getCustomerEmail(customerId);
+      const email = await getCustomerEmail(stripe, customerId);
 
       if (email) {
         const { error } = await supabaseAdmin
           .from("user_plans")
           .update({ access_active: true })
-          .eq("email", email);
+          .eq("email", email.toLowerCase());
 
         if (error) {
           console.error("SUPABASE UPDATE ERROR:", error);
@@ -158,7 +197,7 @@ export async function POST(req: Request) {
           ? subscription.customer
           : null;
 
-      const email = await getCustomerEmail(customerId);
+      const email = await getCustomerEmail(stripe, customerId);
 
       if (email) {
         const { error } = await supabaseAdmin
@@ -167,7 +206,7 @@ export async function POST(req: Request) {
             plan: "basic",
             access_active: false,
           })
-          .eq("email", email);
+          .eq("email", email.toLowerCase());
 
         if (error) {
           console.error("SUPABASE UPDATE ERROR:", error);

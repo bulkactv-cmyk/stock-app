@@ -1,22 +1,30 @@
 import { NextResponse } from "next/server";
-import { stripe } from "../../../lib/stripe";
+import Stripe from "stripe";
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+export const runtime = "nodejs";
 
-if (!appUrl) {
-  throw new Error("Missing NEXT_PUBLIC_APP_URL in environment variables");
-}
+type PlanType = "basic" | "pro" | "unlimited";
 
-const PRICE_IDS: Record<"basic" | "pro" | "unlimited", string> = {
+const PRICE_IDS: Record<PlanType, string> = {
   basic: "price_1TPlmj9bv613l0cODWDSH8ka",
   pro: "price_1TPlnR9bv613l0cOtOEeMEAo",
   unlimited: "price_1TPlnq9bv613l0cO5lm1X2qG",
 };
 
-type PlanType = keyof typeof PRICE_IDS;
-
 export async function POST(req: Request) {
   try {
+    // ✅ Създаваме Stripe ТУК (не извън функцията)
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+
+    if (!appUrl) {
+      return NextResponse.json(
+        { error: "Missing NEXT_PUBLIC_APP_URL" },
+        { status: 500 }
+      );
+    }
+
     const body = await req.json();
 
     const plan =

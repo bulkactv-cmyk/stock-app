@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import YahooFinance from "yahoo-finance2";
-import { sendAlertEmail } from "@/lib/email";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+export const runtime = "nodejs";
 
 const yahooFinance = new YahooFinance();
 
@@ -57,6 +53,26 @@ const CRYPTO_MAP: Record<string, string> = {
   SUI: "sui",
   HBAR: "hedera-hashgraph",
 };
+
+function getSupabaseAdmin() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl) {
+    throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL.");
+  }
+
+  if (!serviceRoleKey) {
+    throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY.");
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+}
 
 function toNumber(value: unknown): number | null {
   if (value === null || value === undefined || value === "") return null;
@@ -130,6 +146,7 @@ function shouldTriggerAlert(
 }
 
 async function markAlertTriggered(id: string) {
+  const supabase = getSupabaseAdmin();
   const now = new Date().toISOString();
 
   const { error } = await supabase
@@ -146,6 +163,8 @@ async function markAlertTriggered(id: string) {
 }
 
 async function resetAlertTriggered(id: string) {
+  const supabase = getSupabaseAdmin();
+
   const { error } = await supabase
     .from("alerts")
     .update({
@@ -160,7 +179,18 @@ async function resetAlertTriggered(id: string) {
 }
 
 export async function GET() {
-  const debug: any = {
+  const debug: {
+    step: string;
+    env: {
+      hasSupabaseUrl: boolean;
+      hasServiceRoleKey: boolean;
+      hasResendKey: boolean;
+    };
+    alertsCount: number;
+    checks: unknown[];
+    supabaseError?: string;
+    error?: string;
+  } = {
     step: "start",
     env: {
       hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -172,11 +202,11 @@ export async function GET() {
   };
 
   try {
+    const supabase = getSupabaseAdmin();
+
     debug.step = "loading_alerts";
 
-    const { data: alerts, error } = await supabase
-      .from("alerts")
-      .select("*");
+    const { data: alerts, error } = await supabase.from("alerts").select("*");
 
     if (error) {
       debug.step = "supabase_error";
@@ -210,7 +240,22 @@ export async function GET() {
         targetPrice
       );
 
-      const item: any = {
+      const item: {
+        id: string;
+        email: string;
+        symbol: string;
+        assetType: "stock" | "crypto";
+        conditionType: "above" | "below";
+        targetPrice: number;
+        currentPrice: number | null;
+        wasTriggered: boolean;
+        triggeredNow: boolean;
+        emailSent?: boolean;
+        emailError?: string;
+        updatedState?: string;
+        skipped?: boolean;
+        reason?: string;
+      } = {
         id: alert.id,
         email: alert.email,
         symbol,
@@ -224,6 +269,8 @@ export async function GET() {
 
       if (triggeredNow && !wasTriggered) {
         try {
+          const { sendAlertEmail } = await import("@/lib/email");
+
           await sendAlertEmail({
             to: alert.email,
             symbol,
@@ -235,9 +282,12 @@ export async function GET() {
 
           item.emailSent = true;
           item.updatedState = "marked_triggered";
-        } catch (emailError: any) {
+        } catch (emailError: unknown) {
           item.emailSent = false;
-          item.emailError = emailError?.message || "Unknown email error";
+          item.emailError =
+            emailError instanceof Error
+              ? emailError.message
+              : "Unknown email error";
         }
       } else if (triggeredNow && wasTriggered) {
         item.emailSent = false;
@@ -256,9 +306,9 @@ export async function GET() {
 
     debug.step = "done";
     return NextResponse.json(debug);
-  } catch (err: any) {
+  } catch (err: unknown) {
     debug.step = "catch_error";
-    debug.error = err?.message || "Unknown error";
+    debug.error = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json(debug, { status: 500 });
   }
 }
