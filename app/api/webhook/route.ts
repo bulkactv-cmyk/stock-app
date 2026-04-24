@@ -1,9 +1,22 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
-import { createClient } from "../../../lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
+
+export const runtime = "nodejs";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL as string,
+  process.env.SUPABASE_SERVICE_ROLE_KEY as string,
+  {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  }
+);
 
 const PRICE_TO_PLAN: Record<string, "basic" | "pro" | "unlimited"> = {
   "price_1TOybBQ392LlwhIsgpgzoYN1": "basic",
@@ -20,7 +33,7 @@ async function getCustomerEmail(customerId: string | null | undefined) {
     return null;
   }
 
-  return "email" in customer ? customer.email || null : null;
+  return customer.email || null;
 }
 
 export async function POST(req: Request) {
@@ -49,10 +62,10 @@ export async function POST(req: Request) {
         ? error.message
         : "Webhook signature verification failed.";
 
+    console.error("STRIPE SIGNATURE ERROR:", message);
+
     return NextResponse.json({ error: message }, { status: 400 });
   }
-
-  const supabase = await createClient();
 
   try {
     if (event.type === "checkout.session.completed") {
@@ -70,18 +83,26 @@ export async function POST(req: Request) {
         fullSession.customer_email ||
         (typeof fullSession.customer === "string"
           ? await getCustomerEmail(fullSession.customer)
-          : fullSession.customer && "email" in fullSession.customer
-          ? fullSession.customer.email || null
-          : null);
+          : fullSession.customer?.email || null);
+
+      console.log("CHECKOUT SESSION:", {
+        sessionId: session.id,
+        email,
+        priceId,
+        plan,
+      });
 
       if (!email || !plan) {
         return NextResponse.json({
           received: true,
           warning: "Missing email or plan.",
+          email,
+          priceId,
+          plan,
         });
       }
 
-      await supabase.from("user_plans").upsert(
+      const { error } = await supabaseAdmin.from("user_plans").upsert(
         {
           email,
           plan,
@@ -89,6 +110,11 @@ export async function POST(req: Request) {
         },
         { onConflict: "email" }
       );
+
+      if (error) {
+        console.error("SUPABASE UPSERT ERROR:", error);
+        throw error;
+      }
     }
 
     if (event.type === "invoice.payment_succeeded") {
@@ -100,10 +126,15 @@ export async function POST(req: Request) {
       const email = await getCustomerEmail(customerId);
 
       if (email) {
-        await supabase
+        const { error } = await supabaseAdmin
           .from("user_plans")
           .update({ access_active: true })
           .eq("email", email);
+
+        if (error) {
+          console.error("SUPABASE UPDATE ERROR:", error);
+          throw error;
+        }
       }
     }
 
@@ -118,13 +149,18 @@ export async function POST(req: Request) {
       const email = await getCustomerEmail(customerId);
 
       if (email) {
-        await supabase
+        const { error } = await supabaseAdmin
           .from("user_plans")
           .update({
             plan: "basic",
             access_active: false,
           })
           .eq("email", email);
+
+        if (error) {
+          console.error("SUPABASE UPDATE ERROR:", error);
+          throw error;
+        }
       }
     }
 
@@ -133,7 +169,10 @@ export async function POST(req: Request) {
     console.error("WEBHOOK HANDLER ERROR:", error);
 
     return NextResponse.json(
-      { error: "Webhook handler failed." },
+      {
+        error: "Webhook handler failed.",
+        message: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }
