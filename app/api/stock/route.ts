@@ -378,6 +378,46 @@ function buildUnlimitedAnalysis(params: {
 }
 
 
+
+const COMPANY_ALIAS_TO_SYMBOL: Record<string, string> = {
+  VW: "VOW3.DE",
+  "VW.DE": "VOW3.DE",
+  VOLKSWAGEN: "VOW3.DE",
+  "VOLKSWAGEN AG": "VOW3.DE",
+  VOW: "VOW3.DE",
+  "VOW.DE": "VOW.DE",
+  VOW3: "VOW3.DE",
+  "VOW3.DE": "VOW3.DE",
+
+  MERCEDES: "MBG.DE",
+  "MERCEDES BENZ": "MBG.DE",
+  "MERCEDES-BENZ": "MBG.DE",
+  "MERCEDES-BENZ GROUP": "MBG.DE",
+  DAIMLER: "MBG.DE",
+  MBG: "MBG.DE",
+  "MBG.DE": "MBG.DE",
+
+  BMW: "BMW.DE",
+  "BMW.DE": "BMW.DE",
+
+  PORSCHE: "P911.DE",
+  "PORSCHE AG": "P911.DE",
+  P911: "P911.DE",
+  "P911.DE": "P911.DE",
+
+  SIEMENS: "SIE.DE",
+  "SIE.DE": "SIE.DE",
+
+  ALLIANZ: "ALV.DE",
+  "ALV.DE": "ALV.DE",
+
+  BASF: "BAS.DE",
+  "BAS.DE": "BAS.DE",
+
+  SAP: "SAP.DE",
+  "SAP.DE": "SAP.DE",
+};
+
 type YahooSearchQuote = {
   symbol?: string;
   shortname?: string;
@@ -388,34 +428,27 @@ type YahooSearchQuote = {
   typeDisp?: string;
 };
 
+function normalizeCompanyQuery(input: string): string {
+  return input
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, " ")
+    .replace(/[.,]/g, "");
+}
+
 function looksLikeDirectTicker(input: string): boolean {
   const value = input.trim().toUpperCase();
 
   if (!value) return false;
 
-  // Examples: AAPL, MSFT, BMW.DE, VOW3.DE, 7203.T, RY.TO, HSBA.L
   return /^[A-Z0-9.\-=]{1,15}$/.test(value) && !value.includes(" ");
 }
 
-async function resolveYahooSymbol(input: string): Promise<{
+async function searchYahooSymbol(input: string): Promise<{
   symbol: string;
-  resolvedFromName: boolean;
-  originalQuery: string;
   resolvedName: string | null;
 }> {
-  const originalQuery = input.trim();
-  const cleanQuery = originalQuery.toUpperCase();
-
-  if (looksLikeDirectTicker(originalQuery)) {
-    return {
-      symbol: cleanQuery,
-      resolvedFromName: false,
-      originalQuery,
-      resolvedName: null,
-    };
-  }
-
-  const searchResult = await yahooFinance.search(originalQuery, {
+  const searchResult = await yahooFinance.search(input, {
     quotesCount: 10,
     newsCount: 0,
   });
@@ -465,10 +498,101 @@ async function resolveYahooSymbol(input: string): Promise<{
 
   return {
     symbol: selected.symbol.toUpperCase(),
-    resolvedFromName: true,
-    originalQuery,
     resolvedName: selected.longname || selected.shortname || null,
   };
+}
+
+async function resolveYahooSymbol(input: string): Promise<{
+  symbol: string;
+  resolvedFromName: boolean;
+  originalQuery: string;
+  resolvedName: string | null;
+}> {
+  const originalQuery = input.trim();
+  const normalizedQuery = normalizeCompanyQuery(originalQuery);
+  const cleanQuery = originalQuery.toUpperCase();
+
+  const aliasSymbol = COMPANY_ALIAS_TO_SYMBOL[normalizedQuery] || COMPANY_ALIAS_TO_SYMBOL[cleanQuery];
+
+  if (aliasSymbol) {
+    return {
+      symbol: aliasSymbol,
+      resolvedFromName: true,
+      originalQuery,
+      resolvedName: normalizedQuery,
+    };
+  }
+
+  if (looksLikeDirectTicker(originalQuery)) {
+    return {
+      symbol: cleanQuery,
+      resolvedFromName: false,
+      originalQuery,
+      resolvedName: null,
+    };
+  }
+
+  const searched = await searchYahooSymbol(originalQuery);
+
+  return {
+    symbol: searched.symbol,
+    resolvedFromName: true,
+    originalQuery,
+    resolvedName: searched.resolvedName,
+  };
+}
+
+async function fetchYahooQuoteAndSummary(input: string) {
+  const firstResolved = await resolveYahooSymbol(input);
+
+  try {
+    const [quote, summary] = await Promise.all([
+      yahooFinance.quote(firstResolved.symbol),
+      yahooFinance.quoteSummary(firstResolved.symbol, {
+        modules: [
+          "assetProfile",
+          "defaultKeyStatistics",
+          "financialData",
+          "summaryDetail",
+        ],
+      }),
+    ]);
+
+    return {
+      quote,
+      summary,
+      resolved: firstResolved,
+    };
+  } catch (firstError) {
+    if (!firstResolved.resolvedFromName) {
+      const searched = await searchYahooSymbol(input);
+
+      const [quote, summary] = await Promise.all([
+        yahooFinance.quote(searched.symbol),
+        yahooFinance.quoteSummary(searched.symbol, {
+          modules: [
+            "assetProfile",
+            "defaultKeyStatistics",
+            "financialData",
+            "summaryDetail",
+          ],
+        }),
+      ]);
+
+      return {
+        quote,
+        summary,
+        resolved: {
+          symbol: searched.symbol,
+          resolvedFromName: true,
+          originalQuery: input,
+          resolvedName: searched.resolvedName,
+        },
+      };
+    }
+
+    throw firstError;
+  }
 }
 
 async function fetchCoinMarketCapCrypto(symbol: string) {
@@ -745,19 +869,7 @@ export async function POST(req: Request) {
       });
     }
 
-    const resolved = await resolveYahooSymbol(rawTicker);
-    const resolvedTicker = resolved.symbol;
-
-    const quote = await yahooFinance.quote(resolvedTicker);
-
-    const summary = await yahooFinance.quoteSummary(resolvedTicker, {
-      modules: [
-        "assetProfile",
-        "defaultKeyStatistics",
-        "financialData",
-        "summaryDetail",
-      ],
-    });
+    const { quote, summary, resolved } = await fetchYahooQuoteAndSummary(rawTicker);
 
     const price =
       quote.regularMarketPrice ??
