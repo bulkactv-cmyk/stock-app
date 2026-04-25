@@ -6,18 +6,24 @@ export default function ContactPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
-  const [sent, setSent] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log("CONTACT FORM:", {
-      name,
-      email,
-      message,
-    });
+    const phone = "359897897410";
 
-    setSent(true);
+    const text = `Hello, my name is ${name}.
+Email: ${email}
+
+Message:
+${message}`;
+
+    const encodedText = encodeURIComponent(text);
+
+    const url = `https://wa.me/${phone}?text=${encodedText}`;
+
+    window.open(url, "_blank");
+
     setName("");
     setEmail("");
     setMessage("");
@@ -32,7 +38,7 @@ export default function ContactPage() {
           <div>
             <h1 style={styles.title}>Contact</h1>
             <p style={styles.subtitle}>
-              Send a message through the platform.
+              Send a message via WhatsApp.
             </p>
           </div>
 
@@ -85,15 +91,9 @@ export default function ContactPage() {
             </div>
 
             <button type="submit" style={styles.submitButton}>
-              Send Message
+              Send via WhatsApp
             </button>
           </form>
-
-          {sent ? (
-            <div style={styles.successBox}>
-              Your message has been sent successfully.
-            </div>
-          ) : null}
         </div>
       </div>
     </main>
@@ -204,7 +204,7 @@ const styles: Record<string, React.CSSProperties> = {
     outline: "none",
   },
   submitButton: {
-    background: "#2563eb",
+    background: "#25D366",
     color: "white",
     border: "none",
     borderRadius: "12px",
@@ -212,15 +212,5 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "16px",
     fontWeight: 800,
     cursor: "pointer",
-  },
-  successBox: {
-    marginTop: "18px",
-    background: "rgba(34,197,94,0.12)",
-    color: "#bbf7d0",
-    border: "1px solid rgba(34,197,94,0.3)",
-    borderRadius: "12px",
-    padding: "14px 16px",
-    fontSize: "14px",
-    fontWeight: 700,
   },
 };
