@@ -16,16 +16,23 @@ type ContactMessage = {
 };
 
 function getSupabaseAdmin() {
-  return createSupabaseAdmin(
-    process.env.NEXT_PUBLIC_SUPABASE_URL as string,
-    process.env.SUPABASE_SERVICE_ROLE_KEY as string,
-    {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-      },
-    }
-  );
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl) {
+    throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL.");
+  }
+
+  if (!serviceRoleKey) {
+    throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY.");
+  }
+
+  return createSupabaseAdmin(supabaseUrl, serviceRoleKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
 }
 
 export default async function AdminPage() {
@@ -33,33 +40,30 @@ export default async function AdminPage() {
 
   const {
     data: { user },
+    error: userError,
   } = await supabaseUser.auth.getUser();
 
-  if (!user?.email) {
+  if (userError || !user?.email) {
     redirect("/auth");
   }
 
-  if (user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-    return (
-      <main style={styles.page}>
-        <div style={styles.card}>
-          <h1 style={styles.title}>Unauthorized</h1>
-          <p style={styles.subtitle}>
-            You do not have permission to access this page.
-          </p>
-          <a href="/" style={styles.backButton}>
-            Back to Home
-          </a>
-        </div>
-      </main>
-    );
+  const currentEmail = user.email.toLowerCase();
+  const adminEmail = ADMIN_EMAIL.toLowerCase();
+
+  console.log("ADMIN ACCESS CHECK:", {
+    currentEmail,
+    isAdmin: currentEmail === adminEmail,
+  });
+
+  if (currentEmail !== adminEmail) {
+    redirect("/");
   }
 
   const supabase = getSupabaseAdmin();
 
   await supabase.from("user_plans").upsert(
     {
-      email: ADMIN_EMAIL,
+      email: adminEmail,
       plan: "unlimited",
       access_active: true,
     },
@@ -74,8 +78,13 @@ export default async function AdminPage() {
   if (error) {
     return (
       <main style={styles.page}>
-        <h1 style={styles.title}>Admin Messages</h1>
-        <div style={styles.errorBox}>Failed to load messages.</div>
+        <div style={styles.card}>
+          <h1 style={styles.title}>Admin Messages</h1>
+          <div style={styles.errorBox}>Failed to load messages.</div>
+          <a href="/" style={styles.backButton}>
+            Back to Home
+          </a>
+        </div>
       </main>
     );
   }
@@ -90,7 +99,9 @@ export default async function AdminPage() {
           <p style={styles.subtitle}>
             Private admin panel for contact form submissions.
           </p>
-          <p style={styles.adminBadge}>Admin: {ADMIN_EMAIL} · Unlimited Plan</p>
+          <p style={styles.adminBadge}>
+            Admin: {ADMIN_EMAIL} · Unlimited Plan
+          </p>
         </div>
 
         <a href="/" style={styles.backButton}>
@@ -223,13 +234,12 @@ const styles: Record<string, React.CSSProperties> = {
     margin: 0,
   },
   errorBox: {
-    maxWidth: "900px",
-    margin: "24px auto",
     background: "rgba(239,68,68,0.12)",
     color: "#fecaca",
     border: "1px solid rgba(239,68,68,0.3)",
     borderRadius: "12px",
     padding: "14px 16px",
     fontWeight: 700,
+    marginBottom: "18px",
   },
 };
