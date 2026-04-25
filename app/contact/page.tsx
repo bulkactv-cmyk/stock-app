@@ -6,27 +6,45 @@ export default function ContactPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const phone = "359897897410";
+    setLoading(true);
+    setError("");
+    setSent(false);
 
-    const text = `Hello, my name is ${name}.
-Email: ${email}
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          message,
+        }),
+      });
 
-Message:
-${message}`;
+      const data = await res.json();
 
-    const encodedText = encodeURIComponent(text);
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to send message");
+      }
 
-    const url = `https://wa.me/${phone}?text=${encodedText}`;
-
-    window.open(url, "_blank");
-
-    setName("");
-    setEmail("");
-    setMessage("");
+      setSent(true);
+      setName("");
+      setEmail("");
+      setMessage("");
+    } catch (err: any) {
+      setError(err.message || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -38,7 +56,7 @@ ${message}`;
           <div>
             <h1 style={styles.title}>Contact</h1>
             <p style={styles.subtitle}>
-              Send a message via WhatsApp.
+              Send a message directly to our email.
             </p>
           </div>
 
@@ -90,10 +108,22 @@ ${message}`;
               />
             </div>
 
-            <button type="submit" style={styles.submitButton}>
-              Send via WhatsApp
+            <button type="submit" style={styles.submitButton} disabled={loading}>
+              {loading ? "Sending..." : "Send Message"}
             </button>
           </form>
+
+          {sent && (
+            <div style={styles.successBox}>
+              Message sent successfully.
+            </div>
+          )}
+
+          {error && (
+            <div style={styles.errorBox}>
+              {error}
+            </div>
+          )}
         </div>
       </div>
     </main>
@@ -204,7 +234,7 @@ const styles: Record<string, React.CSSProperties> = {
     outline: "none",
   },
   submitButton: {
-    background: "#25D366",
+    background: "#2563eb",
     color: "white",
     border: "none",
     borderRadius: "12px",
@@ -212,5 +242,26 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "16px",
     fontWeight: 800,
     cursor: "pointer",
+    opacity: 1,
+  },
+  successBox: {
+    marginTop: "18px",
+    background: "rgba(34,197,94,0.12)",
+    color: "#bbf7d0",
+    border: "1px solid rgba(34,197,94,0.3)",
+    borderRadius: "12px",
+    padding: "14px 16px",
+    fontSize: "14px",
+    fontWeight: 700,
+  },
+  errorBox: {
+    marginTop: "18px",
+    background: "rgba(239,68,68,0.12)",
+    color: "#fecaca",
+    border: "1px solid rgba(239,68,68,0.3)",
+    borderRadius: "12px",
+    padding: "14px 16px",
+    fontSize: "14px",
+    fontWeight: 700,
   },
 };
