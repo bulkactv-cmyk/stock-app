@@ -30,9 +30,9 @@ export default function ContactPage() {
       <div style={styles.wrapper}>
         <div style={styles.headerRow}>
           <div>
-            <h1 style={styles.title}>Контакт</h1>
+            <h1 style={styles.title}>Contact</h1>
             <p style={styles.subtitle}>
-              Изпрати съобщение през платформата.
+              Send a message through the platform.
             </p>
           </div>
 
@@ -42,20 +42,20 @@ export default function ContactPage() {
               window.location.href = "/";
             }}
           >
-            Назад
+            Back
           </button>
         </div>
 
         <div style={styles.card}>
-          <h2 style={styles.cardTitle}>Форма за съобщение</h2>
+          <h2 style={styles.cardTitle}>Message Form</h2>
 
           <form onSubmit={handleSubmit} style={styles.form}>
             <div style={styles.fieldWrap}>
-              <label style={styles.label}>Име</label>
+              <label style={styles.label}>Name</label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Въведи име"
+                placeholder="Enter your name"
                 style={styles.input}
                 required
               />
@@ -66,7 +66,7 @@ export default function ContactPage() {
               <input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Въведи email"
+                placeholder="Enter your email"
                 type="email"
                 style={styles.input}
                 required
@@ -74,24 +74,24 @@ export default function ContactPage() {
             </div>
 
             <div style={styles.fieldWrap}>
-              <label style={styles.label}>Съобщение</label>
+              <label style={styles.label}>Message</label>
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Напиши съобщението си"
+                placeholder="Write your message"
                 style={styles.textarea}
                 required
               />
             </div>
 
             <button type="submit" style={styles.submitButton}>
-              Изпрати съобщение
+              Send Message
             </button>
           </form>
 
           {sent ? (
             <div style={styles.successBox}>
-              Съобщението беше изпратено успешно.
+              Your message has been sent successfully.
             </div>
           ) : null}
         </div>
