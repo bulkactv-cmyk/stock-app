@@ -6,16 +6,14 @@ export const runtime = "nodejs";
 type PlanType = "basic" | "pro" | "unlimited";
 
 const PRICE_IDS: Record<PlanType, string> = {
-  basic: "price_1TPlmj9bv613l0cODWDSH8ka",
-  pro: "price_1TPlnR9bv613l0cOtOEeMEAo",
-  unlimited: "price_1TPlnq9bv613l0cO5lm1X2qG",
+  basic: "price_1TQ0dM60gnc7J6cZDm2SGJId",
+  pro: "price_1TQ0e060gnc7J6cZZTUaENKt",
+  unlimited: "price_1TQ0eU60gnc7J6cZ1eKtargn",
 };
 
 export async function POST(req: Request) {
   try {
-    // ✅ Създаваме Stripe ТУК (не извън функцията)
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
-
     const appUrl = process.env.NEXT_PUBLIC_APP_URL;
 
     if (!appUrl) {
@@ -28,14 +26,10 @@ export async function POST(req: Request) {
     const body = await req.json();
 
     const plan =
-      typeof body?.plan === "string"
-        ? body.plan.trim().toLowerCase()
-        : "";
+      typeof body?.plan === "string" ? body.plan.trim().toLowerCase() : "";
 
     const email =
-      typeof body?.email === "string"
-        ? body.email.trim().toLowerCase()
-        : "";
+      typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
 
     if (!plan || !(plan in PRICE_IDS)) {
       return NextResponse.json(
@@ -65,6 +59,7 @@ export async function POST(req: Request) {
       metadata: {
         plan,
         email,
+        priceId,
       },
       success_url: `${appUrl}/success?plan=${encodeURIComponent(plan)}`,
       cancel_url: `${appUrl}/pricing`,

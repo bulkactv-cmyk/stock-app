@@ -6,9 +6,9 @@ import { createClient } from "@supabase/supabase-js";
 export const runtime = "nodejs";
 
 const PRICE_TO_PLAN: Record<string, "basic" | "pro" | "unlimited"> = {
-  "price_1TPlmj9bv613l0cODWDSH8ka": "basic",
-  "price_1TPlnR9bv613l0cOtOEeMEAo": "pro",
-  "price_1TPlnq9bv613l0cO5lm1X2qG": "unlimited",
+  "price_1TQ0dM60gnc7J6cZDm2SGJId": "basic",
+  "price_1TQ0e060gnc7J6cZZTUaENKt": "pro",
+  "price_1TQ0eU60gnc7J6cZ1eKtargn": "unlimited",
 };
 
 function getStripeClient() {

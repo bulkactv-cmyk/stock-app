@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
+export const runtime = "nodejs";
+
 type PlanType = "basic" | "pro" | "unlimited";
 
-const priceMap: Record<PlanType, string> = {
-  basic: "price_1TPlmj9bv613l0cODWDSH8ka",
-  pro: "price_1TPlnR9bv613l0cOtOEeMEAo",
-  unlimited: "price_1TPlnq9bv613l0cO5lm1X2qG",
+const PRICE_IDS: Record<PlanType, string> = {
+  basic: "price_1TQ0dM60gnc7J6cZDm2SGJId",
+  pro: "price_1TQ0e060gnc7J6cZZTUaENKt",
+  unlimited: "price_1TQ0eU60gnc7J6cZ1eKtargn",
 };
 
 function isPlanType(plan: string): plan is PlanType {
@@ -62,7 +64,7 @@ export async function POST(req: Request) {
     }
 
     const plan: PlanType = rawPlan;
-    const priceId = priceMap[plan];
+    const priceId = PRICE_IDS[plan];
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
