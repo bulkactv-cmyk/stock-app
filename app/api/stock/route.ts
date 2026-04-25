@@ -843,6 +843,169 @@ export async function POST(req: Request) {
 
     const currentPlan = limitCheck.plan;
 
+    try {
+      const { quote, summary, resolved } = await fetchYahooQuoteAndSummary(
+        rawTicker
+      );
+
+      const price =
+        quote.regularMarketPrice ??
+        quote.postMarketPrice ??
+        quote.preMarketPrice ??
+        null;
+
+      const peRatio =
+        toNumber(quote.trailingPE) ?? toNumber(summary.summaryDetail?.trailingPE);
+
+      const roe = toNumber(summary.financialData?.returnOnEquity);
+      const operatingMargin = toNumber(summary.financialData?.operatingMargins);
+      const netMargin = toNumber(summary.financialData?.profitMargins);
+      const debtToEquity = toNumber(summary.financialData?.debtToEquity);
+
+      const aiScore = calculateAIScore({
+        peRatio,
+        roe,
+        netMargin,
+        debtToEquity,
+      });
+
+      const companyProfile = {
+        symbol: quote.symbol || cleanTicker,
+        name: quote.shortName || quote.longName || "No data",
+        sector: summary.assetProfile?.sector || null,
+        industry: summary.assetProfile?.industry || null,
+        description: summary.assetProfile?.longBusinessSummary || null,
+        website: summary.assetProfile?.website || null,
+        country: summary.assetProfile?.country || null,
+        exchange: quote.fullExchangeName || quote.exchange || null,
+        currency: quote.currency || null,
+        resolvedFromName: resolved.resolvedFromName,
+        originalQuery: resolved.originalQuery,
+        resolvedName: resolved.resolvedName,
+      };
+
+      const basicPayload = {
+        source: "yahoo_finance",
+        plan: currentPlan,
+        tier: "basic",
+        assetType: "stock",
+        companyInfo: companyProfile,
+        price,
+        peRatio,
+        roe,
+        operatingMargin,
+        netMargin,
+        debtToEquity,
+        purchaseSignal: estimateSignal({
+          peRatio,
+          roe,
+          operatingMargin,
+          netMargin,
+          debtToEquity,
+        }),
+        aiScore,
+        dailyLimit: safeLimitValue(limitCheck.dailyLimit),
+        usedToday: limitCheck.usedToday + 1,
+        remainingToday:
+          limitCheck.remainingToday === Infinity
+            ? "unlimited"
+            : Math.max(limitCheck.remainingToday - 1, 0),
+      };
+
+      if (currentPlan === "basic") {
+        await incrementUsage(user.email);
+        return NextResponse.json(basicPayload);
+      }
+
+      const revenue = toNumber(summary.financialData?.totalRevenue);
+      const marketCap = toNumber(quote.marketCap);
+      const eps =
+        toNumber(summary.defaultKeyStatistics?.trailingEps) ??
+        toNumber(quote.epsTrailingTwelveMonths);
+
+      const realValue =
+        eps !== null && peRatio !== null && peRatio > 0
+          ? Number((eps * Math.min(peRatio, 20)).toFixed(2))
+          : null;
+
+      if (currentPlan === "pro") {
+        const responsePayload = {
+          ...basicPayload,
+          tier: "pro",
+          revenue,
+          marketCap,
+          eps,
+          realValue,
+          aiAnalysis: buildProAnalysis({
+            companyName: companyProfile.name,
+            price,
+            realValue,
+            peRatio,
+            roe,
+            operatingMargin,
+            netMargin,
+            debtToEquity,
+          }),
+        };
+
+        await incrementUsage(user.email);
+        return NextResponse.json(responsePayload);
+      }
+
+      const freeCashFlow = toNumber(summary.financialData?.freeCashflow);
+      const roic = toNumber(summary.financialData?.returnOnAssets);
+      const currentRatio = toNumber(summary.financialData?.currentRatio);
+      const revenueGrowth = toNumber(summary.financialData?.revenueGrowth);
+      const earningsGrowth = toNumber(summary.financialData?.earningsGrowth);
+      const dividendYield =
+        toNumber(summary.summaryDetail?.dividendYield) ??
+        toNumber(quote.trailingAnnualDividendYield);
+
+      const responsePayload = {
+        ...basicPayload,
+        tier: "unlimited",
+        revenue,
+        marketCap,
+        eps,
+        realValue,
+        aiAnalysis: buildUnlimitedAnalysis({
+          companyName: companyProfile.name,
+          price,
+          realValue,
+          peRatio,
+          roe,
+          operatingMargin,
+          netMargin,
+          debtToEquity,
+          revenue,
+          marketCap,
+          eps,
+          freeCashFlow,
+          roic,
+          currentRatio,
+          revenueGrowth,
+          earningsGrowth,
+          dividendYield,
+        }),
+        extraMetrics: {
+          freeCashFlow,
+          roic,
+          currentRatio,
+          revenueGrowth,
+          earningsGrowth,
+          dividendYield,
+        },
+      };
+
+      await incrementUsage(user.email);
+      return NextResponse.json(responsePayload);
+    } catch (stockError) {
+      console.log("STOCK LOOKUP FAILED, TRYING CRYPTO:", {
+        ticker: cleanTicker,
+        message: stockError instanceof Error ? stockError.message : String(stockError),
+      });
+    }
+
     const cryptoPayload = await tryFetchCoinMarketCapCrypto(cleanTicker);
 
     if (cryptoPayload) {
@@ -869,171 +1032,10 @@ export async function POST(req: Request) {
       });
     }
 
-    const { quote, summary, resolved } = await fetchYahooQuoteAndSummary(rawTicker);
-
-    const price =
-      quote.regularMarketPrice ??
-      quote.postMarketPrice ??
-      quote.preMarketPrice ??
-      null;
-
-    const peRatio =
-      toNumber(quote.trailingPE) ??
-      toNumber(summary.summaryDetail?.trailingPE);
-
-    const roe = toNumber(summary.financialData?.returnOnEquity);
-    const operatingMargin = toNumber(summary.financialData?.operatingMargins);
-    const netMargin = toNumber(summary.financialData?.profitMargins);
-    const debtToEquity = toNumber(summary.financialData?.debtToEquity);
-
-    const aiScore = calculateAIScore({
-      peRatio,
-      roe,
-      netMargin,
-      debtToEquity,
-    });
-
-    const companyProfile = {
-      symbol: quote.symbol || cleanTicker,
-      name: quote.shortName || quote.longName || "No data",
-      sector: summary.assetProfile?.sector || null,
-      industry: summary.assetProfile?.industry || null,
-      description: summary.assetProfile?.longBusinessSummary || null,
-      website: summary.assetProfile?.website || null,
-      country: summary.assetProfile?.country || null,
-      exchange: quote.fullExchangeName || quote.exchange || null,
-      currency: quote.currency || null,
-      resolvedFromName: resolved.resolvedFromName,
-      originalQuery: resolved.originalQuery,
-      resolvedName: resolved.resolvedName,
-    };
-
-    const basicPayload = {
-      source: "yahoo_finance",
-      plan: currentPlan,
-      tier: "basic",
-      assetType: "stock",
-      companyInfo: companyProfile,
-      price,
-      peRatio,
-      roe,
-      operatingMargin,
-      netMargin,
-      debtToEquity,
-      purchaseSignal: estimateSignal({
-        peRatio,
-        roe,
-        operatingMargin,
-        netMargin,
-        debtToEquity,
-      }),
-      aiScore,
-      dailyLimit: safeLimitValue(limitCheck.dailyLimit),
-      usedToday: limitCheck.usedToday + 1,
-      remainingToday:
-        limitCheck.remainingToday === Infinity
-          ? "unlimited"
-          : Math.max(limitCheck.remainingToday - 1, 0),
-    };
-
-    if (currentPlan === "basic") {
-      await incrementUsage(user.email);
-      return NextResponse.json(basicPayload);
-    }
-
-    if (currentPlan === "pro") {
-      const revenue = toNumber(summary.financialData?.totalRevenue);
-      const marketCap = toNumber(quote.marketCap);
-      const eps =
-        toNumber(summary.defaultKeyStatistics?.trailingEps) ??
-        toNumber(quote.epsTrailingTwelveMonths);
-
-      const realValue =
-        eps !== null && peRatio !== null && peRatio > 0
-          ? Number((eps * Math.min(peRatio, 20)).toFixed(2))
-          : null;
-
-      const responsePayload = {
-        ...basicPayload,
-        tier: "pro",
-        revenue,
-        marketCap,
-        eps,
-        realValue,
-        aiAnalysis: buildProAnalysis({
-          companyName: companyProfile.name,
-          price,
-          realValue,
-          peRatio,
-          roe,
-          operatingMargin,
-          netMargin,
-          debtToEquity,
-        }),
-      };
-
-      await incrementUsage(user.email);
-      return NextResponse.json(responsePayload);
-    }
-
-    const revenue = toNumber(summary.financialData?.totalRevenue);
-    const marketCap = toNumber(quote.marketCap);
-    const eps =
-      toNumber(summary.defaultKeyStatistics?.trailingEps) ??
-      toNumber(quote.epsTrailingTwelveMonths);
-
-    const realValue =
-      eps !== null && peRatio !== null && peRatio > 0
-        ? Number((eps * Math.min(peRatio, 20)).toFixed(2))
-        : null;
-
-    const freeCashFlow = toNumber(summary.financialData?.freeCashflow);
-    const roic = toNumber(summary.financialData?.returnOnAssets);
-    const currentRatio = toNumber(summary.financialData?.currentRatio);
-    const revenueGrowth = toNumber(summary.financialData?.revenueGrowth);
-    const earningsGrowth = toNumber(summary.financialData?.earningsGrowth);
-    const dividendYield =
-      toNumber(summary.summaryDetail?.dividendYield) ??
-      toNumber(quote.trailingAnnualDividendYield);
-
-    const responsePayload = {
-      ...basicPayload,
-      tier: "unlimited",
-      revenue,
-      marketCap,
-      eps,
-      realValue,
-      aiAnalysis: buildUnlimitedAnalysis({
-        companyName: companyProfile.name,
-        price,
-        realValue,
-        peRatio,
-        roe,
-        operatingMargin,
-        netMargin,
-        debtToEquity,
-        revenue,
-        marketCap,
-        eps,
-        freeCashFlow,
-        roic,
-        currentRatio,
-        revenueGrowth,
-        earningsGrowth,
-        dividendYield,
-      }),
-      extraMetrics: {
-        freeCashFlow,
-        roic,
-        currentRatio,
-        revenueGrowth,
-        earningsGrowth,
-        dividendYield,
-      },
-    };
-
-    await incrementUsage(user.email);
-    return NextResponse.json(responsePayload);
+    return NextResponse.json(
+      { error: "No stock or cryptocurrency data found for this symbol." },
+      { status: 404 }
+    );
   } catch (error: unknown) {
     console.error("STOCK ROUTE ERROR:", error);
 
