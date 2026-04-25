@@ -1,6 +1,10 @@
-import { createClient } from "@supabase/supabase-js";
+import { redirect } from "next/navigation";
+import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
+import { createClient } from "../../lib/supabase/server";
 
 export const dynamic = "force-dynamic";
+
+const ADMIN_EMAIL = "denalexinvest@gmail.com";
 
 type ContactMessage = {
   id: number;
@@ -12,7 +16,7 @@ type ContactMessage = {
 };
 
 function getSupabaseAdmin() {
-  return createClient(
+  return createSupabaseAdmin(
     process.env.NEXT_PUBLIC_SUPABASE_URL as string,
     process.env.SUPABASE_SERVICE_ROLE_KEY as string,
     {
@@ -25,7 +29,42 @@ function getSupabaseAdmin() {
 }
 
 export default async function AdminPage() {
+  const supabaseUser = await createClient();
+
+  const {
+    data: { user },
+  } = await supabaseUser.auth.getUser();
+
+  if (!user?.email) {
+    redirect("/auth");
+  }
+
+  if (user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+    return (
+      <main style={styles.page}>
+        <div style={styles.card}>
+          <h1 style={styles.title}>Unauthorized</h1>
+          <p style={styles.subtitle}>
+            You do not have permission to access this page.
+          </p>
+          <a href="/" style={styles.backButton}>
+            Back to Home
+          </a>
+        </div>
+      </main>
+    );
+  }
+
   const supabase = getSupabaseAdmin();
+
+  await supabase.from("user_plans").upsert(
+    {
+      email: ADMIN_EMAIL,
+      plan: "unlimited",
+      access_active: true,
+    },
+    { onConflict: "email" }
+  );
 
   const { data, error } = await supabase
     .from("contact_messages")
@@ -48,7 +87,10 @@ export default async function AdminPage() {
       <div style={styles.header}>
         <div>
           <h1 style={styles.title}>Admin Messages</h1>
-          <p style={styles.subtitle}>Contact form submissions from users.</p>
+          <p style={styles.subtitle}>
+            Private admin panel for contact form submissions.
+          </p>
+          <p style={styles.adminBadge}>Admin: {ADMIN_EMAIL} · Unlimited Plan</p>
         </div>
 
         <a href="/" style={styles.backButton}>
@@ -110,6 +152,11 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#94a3b8",
     marginTop: "8px",
   },
+  adminBadge: {
+    color: "#bfdbfe",
+    fontWeight: 800,
+    marginTop: "10px",
+  },
   backButton: {
     background: "rgba(255,255,255,0.06)",
     color: "white",
@@ -118,6 +165,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "12px 18px",
     fontWeight: 700,
     textDecoration: "none",
+    display: "inline-block",
   },
   card: {
     maxWidth: "1100px",
