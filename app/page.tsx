@@ -157,6 +157,7 @@ export default function HomePage() {
   const [email, setEmail] = useState("");
   const [plan, setPlan] = useState<PlanType>("loading");
   const [accessActive, setAccessActive] = useState(false);
+  const [hoveredNav, setHoveredNav] = useState("");
 
   const [londonTime, setLondonTime] = useState("");
   const [newYorkTime, setNewYorkTime] = useState("");
@@ -241,7 +242,7 @@ export default function HomePage() {
 
   const getPlanLabel = () => {
     if (plan === "loading") return "LOADING";
-    if (plan === "guest") return "GUEST";
+    if (plan === "guest") return "VISITOR";
     return plan.toUpperCase();
   };
 
@@ -252,19 +253,36 @@ export default function HomePage() {
     return styles.planBadgeGuest;
   };
 
+  const getNavButtonStyle = (key: string) => ({
+    ...styles.navButton,
+    ...(hoveredNav === key ? styles.navButtonHover : {}),
+  });
+
   return (
     <main style={styles.page}>
       <div style={styles.overlay} />
 
       <div style={styles.wrapper}>
-        <div style={styles.topBar}>
+        <header style={styles.topBar}>
           <div style={styles.brandBlock}>
-            <div style={styles.logoBox}>FA</div>
+            <button
+              type="button"
+              style={styles.logoBox}
+              onClick={() => {
+                window.location.href = "/";
+              }}
+              aria-label="Go to homepage"
+            >
+              <img src="/logo.png" alt="Fundamental Analysis Platform logo" style={styles.mainLogoImage} />
+            </button>
 
-            <div>
-              <div style={styles.brandName}>Fundamental Analysis Platform</div>
+            <div style={styles.brandTextBlock}>
+              <div style={styles.brandLine}>
+                <div style={styles.brandName}>Fundamental Analysis Platform</div>
+                <span style={styles.proDeskBadge}>PRO DESK</span>
+              </div>
               <div style={styles.brandSubtext}>
-                Stocks, crypto, premium analysis and professional market tools
+                Professional stock, crypto and AI analysis platform.
               </div>
             </div>
           </div>
@@ -272,7 +290,9 @@ export default function HomePage() {
           <div style={styles.topBarRight}>
             <div style={styles.topButtons}>
               <button
-                style={styles.secondaryButton}
+                style={getNavButtonStyle("pricing")}
+                onMouseEnter={() => setHoveredNav("pricing")}
+                onMouseLeave={() => setHoveredNav("")}
                 onClick={() => {
                   window.location.href = "/pricing";
                 }}
@@ -281,7 +301,9 @@ export default function HomePage() {
               </button>
 
               <button
-                style={styles.contactButton}
+                style={getNavButtonStyle("contact")}
+                onMouseEnter={() => setHoveredNav("contact")}
+                onMouseLeave={() => setHoveredNav("")}
                 onClick={() => {
                   window.location.href = "/contact";
                 }}
@@ -290,7 +312,9 @@ export default function HomePage() {
               </button>
 
               <button
-                style={styles.newsButton}
+                style={getNavButtonStyle("news")}
+                onMouseEnter={() => setHoveredNav("news")}
+                onMouseLeave={() => setHoveredNav("")}
                 onClick={() => {
                   document.getElementById("market-news")?.scrollIntoView({
                     behavior: "smooth",
@@ -302,7 +326,9 @@ export default function HomePage() {
               </button>
 
               <button
-                style={styles.educationButton}
+                style={getNavButtonStyle("education")}
+                onMouseEnter={() => setHoveredNav("education")}
+                onMouseLeave={() => setHoveredNav("")}
                 onClick={() => {
                   document.getElementById("education")?.scrollIntoView({
                     behavior: "smooth",
@@ -316,7 +342,9 @@ export default function HomePage() {
               {isLoggedIn ? (
                 <>
                   <button
-                    style={styles.primaryButton}
+                    style={getNavButtonStyle("dashboard")}
+                    onMouseEnter={() => setHoveredNav("dashboard")}
+                    onMouseLeave={() => setHoveredNav("")}
                     onClick={() => {
                       window.location.href = "/dashboard";
                     }}
@@ -325,7 +353,9 @@ export default function HomePage() {
                   </button>
 
                   <button
-                    style={styles.darkButton}
+                    style={getNavButtonStyle("logout")}
+                    onMouseEnter={() => setHoveredNav("logout")}
+                    onMouseLeave={() => setHoveredNav("")}
                     onClick={async () => {
                       await supabase.auth.signOut();
                       window.location.href = "/";
@@ -336,7 +366,9 @@ export default function HomePage() {
                 </>
               ) : (
                 <button
-                  style={styles.primaryButton}
+                  style={getNavButtonStyle("login")}
+                  onMouseEnter={() => setHoveredNav("login")}
+                  onMouseLeave={() => setHoveredNav("")}
                   onClick={() => {
                     window.location.href = "/auth";
                   }}
@@ -353,7 +385,7 @@ export default function HomePage() {
               ) : null}
             </div>
           </div>
-        </div>
+        </header>
 
         <div style={styles.clocksWrap}>
           <ClockItem label="London" time={londonTime} />
@@ -649,45 +681,80 @@ const styles: Record<string, React.CSSProperties> = {
   topBar: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: "20px",
+    alignItems: "center",
+    gap: "18px",
     marginBottom: "14px",
     flexWrap: "wrap",
+    background:
+      "linear-gradient(135deg, rgba(14,80,132,0.58), rgba(29,78,216,0.24))",
+    border: "1px solid rgba(14,165,233,0.28)",
+    borderRadius: "22px",
+    padding: "14px 16px",
+    boxShadow: "0 18px 42px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.04)",
   },
   brandBlock: {
     display: "flex",
     alignItems: "center",
-    gap: "14px",
-    flexWrap: "wrap",
+    gap: "12px",
+    minWidth: 0,
   },
   logoBox: {
-    width: "52px",
-    height: "52px",
-    borderRadius: "14px",
-    background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
-    color: "white",
+    width: "64px",
+    height: "64px",
+    borderRadius: "18px",
+    background: "rgba(14,165,233,0.08)",
+    border: "1px solid rgba(14,165,233,0.20)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "20px",
-    fontWeight: 800,
-    boxShadow: "0 10px 24px rgba(37,99,235,0.28)",
+    padding: "4px",
+    cursor: "pointer",
+    boxShadow: "0 14px 30px rgba(14,165,233,0.12)",
+    flexShrink: 0,
+  },
+  mainLogoImage: {
+    width: "100%",
+    height: "100%",
+    objectFit: "contain",
+    display: "block",
+  },
+  brandTextBlock: {
+    minWidth: 0,
+  },
+  brandLine: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    flexWrap: "wrap",
   },
   brandName: {
     color: "white",
     fontSize: "20px",
-    fontWeight: 800,
-    marginBottom: "4px",
+    fontWeight: 900,
+    letterSpacing: "-0.3px",
+    lineHeight: 1.15,
+  },
+  proDeskBadge: {
+    background: "rgba(34,197,94,0.16)",
+    color: "#86efac",
+    border: "1px solid rgba(34,197,94,0.32)",
+    borderRadius: "999px",
+    padding: "4px 8px",
+    fontSize: "10px",
+    fontWeight: 900,
+    letterSpacing: "0.4px",
+    whiteSpace: "nowrap",
   },
   brandSubtext: {
-    color: "#94a3b8",
-    fontSize: "14px",
-    lineHeight: 1.5,
+    color: "#a8b6ca",
+    fontSize: "13px",
+    lineHeight: 1.45,
+    marginTop: "6px",
   },
   topBarRight: {
     display: "flex",
     alignItems: "center",
-    gap: "14px",
+    gap: "12px",
     flexWrap: "wrap",
     marginLeft: "auto",
   },
@@ -696,6 +763,25 @@ const styles: Record<string, React.CSSProperties> = {
     gap: "10px",
     flexWrap: "wrap",
     alignItems: "center",
+  },
+  navButton: {
+    background: "rgba(14, 165, 233, 0.16)",
+    color: "#dbeafe",
+    border: "1px solid rgba(14, 165, 233, 0.38)",
+    borderRadius: "14px",
+    padding: "12px 18px",
+    fontSize: "14px",
+    fontWeight: 800,
+    cursor: "pointer",
+    boxShadow: "0 10px 22px rgba(0,0,0,0.14)",
+    transition: "all 0.18s ease",
+  },
+  navButtonHover: {
+    background: "rgba(37,99,235,0.34)",
+    border: "1px solid rgba(96,165,250,0.62)",
+    color: "white",
+    transform: "translateY(-1px)",
+    boxShadow: "0 0 0 1px rgba(96,165,250,0.14), 0 14px 28px rgba(37,99,235,0.22)",
   },
   clocksWrap: {
     display: "grid",
@@ -732,13 +818,13 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: "999px",
     padding: "10px 14px",
     fontSize: "12px",
-    fontWeight: 800,
+    fontWeight: 900,
     letterSpacing: "0.4px",
     border: "1px solid rgba(255,255,255,0.08)",
     order: 10,
   },
   planBadgeGuest: {
-    background: "rgba(51,65,85,0.42)",
+    background: "rgba(51,65,85,0.52)",
     color: "#cbd5e1",
   },
   planBadgeBasic: {
@@ -751,9 +837,9 @@ const styles: Record<string, React.CSSProperties> = {
     border: "1px solid rgba(59,130,246,0.35)",
   },
   planBadgeUnlimited: {
-    background: "rgba(168,85,247,0.18)",
+    background: "rgba(168,85,247,0.24)",
     color: "#e9d5ff",
-    border: "1px solid rgba(168,85,247,0.35)",
+    border: "1px solid rgba(168,85,247,0.45)",
   },
   planBadgeDot: {
     width: "8px",
@@ -822,66 +908,6 @@ const styles: Record<string, React.CSSProperties> = {
     maxWidth: "760px",
     marginBottom: "20px",
     fontWeight: 400,
-  },
-  primaryButton: {
-    background: "#2563eb",
-    color: "white",
-    border: "none",
-    borderRadius: "12px",
-    padding: "12px 18px",
-    fontSize: "15px",
-    fontWeight: 700,
-    cursor: "pointer",
-  },
-  contactButton: {
-    background: "rgba(14, 165, 233, 0.16)",
-    color: "#bae6fd",
-    border: "1px solid rgba(14, 165, 233, 0.34)",
-    borderRadius: "12px",
-    padding: "12px 18px",
-    fontSize: "15px",
-    fontWeight: 700,
-    cursor: "pointer",
-  },
-  newsButton: {
-    background: "rgba(245,158,11,0.16)",
-    color: "#fde68a",
-    border: "1px solid rgba(245,158,11,0.34)",
-    borderRadius: "12px",
-    padding: "12px 18px",
-    fontSize: "15px",
-    fontWeight: 700,
-    cursor: "pointer",
-  },
-  educationButton: {
-    background: "rgba(168,85,247,0.16)",
-    color: "#e9d5ff",
-    border: "1px solid rgba(168,85,247,0.34)",
-    borderRadius: "12px",
-    padding: "12px 18px",
-    fontSize: "15px",
-    fontWeight: 700,
-    cursor: "pointer",
-  },
-  secondaryButton: {
-    background: "#334155",
-    color: "white",
-    border: "none",
-    borderRadius: "12px",
-    padding: "12px 18px",
-    fontSize: "15px",
-    fontWeight: 700,
-    cursor: "pointer",
-  },
-  darkButton: {
-    background: "#111827",
-    color: "white",
-    border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: "12px",
-    padding: "12px 18px",
-    fontSize: "15px",
-    fontWeight: 700,
-    cursor: "pointer",
   },
   heroMetricsGrid: {
     display: "grid",
@@ -1107,3 +1133,4 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
   },
 };
+

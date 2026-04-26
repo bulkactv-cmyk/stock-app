@@ -244,6 +244,47 @@ function formatPercent(value: number | null | undefined) {
   return `${(value * 100).toFixed(2)}%`;
 }
 
+function formatBenchmarkNumber(value: number) {
+  if (value >= 1_000_000_000_000) return `${(value / 1_000_000_000_000).toFixed(1)}T`;
+  if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1)}B`;
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (value < 1 && value > -1) return value.toFixed(2);
+  return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
+function formatBenchmarkPercent(value: number) {
+  return `${(value * 100).toFixed(0)}%`;
+}
+
+function buildBenchmarkLabel(
+  min: number,
+  max: number,
+  format: "number" | "percent" = "number"
+) {
+  const formatter = format === "percent" ? formatBenchmarkPercent : formatBenchmarkNumber;
+  return `${formatter(min)} - ${formatter(max)}`;
+}
+
+function getBenchmarkColor(
+  value: number | null | undefined,
+  min?: number,
+  max?: number
+) {
+  if (
+    value === null ||
+    value === undefined ||
+    min === undefined ||
+    max === undefined ||
+    Number.isNaN(value)
+  ) {
+    return "white";
+  }
+
+  if (value < min) return "#22c55e";
+  if (value > max) return "#ef4444";
+  return "white";
+}
+
 function safeText(value?: string | null) {
   if (!value || !value.trim()) return "No data";
   return value;
@@ -872,14 +913,44 @@ function AlertsLockedCard() {
 function MetricCard({
   label,
   value,
+  actualValue,
+  benchmarkMin,
+  benchmarkMax,
+  benchmarkFormat = "number",
 }: {
   label: string;
   value: string;
+  actualValue?: number | null;
+  benchmarkMin?: number;
+  benchmarkMax?: number;
+  benchmarkFormat?: "number" | "percent";
 }) {
+  const hasBenchmark = benchmarkMin !== undefined && benchmarkMax !== undefined;
+
+  const isValidActual =
+    actualValue !== null &&
+    actualValue !== undefined &&
+    !Number.isNaN(actualValue);
+
+  const valueColor =
+    hasBenchmark && isValidActual
+      ? getBenchmarkColor(actualValue, benchmarkMin, benchmarkMax)
+      : "white";
+
   return (
     <div style={styles.metricCard}>
-      <div style={styles.metricLabel}>{label}</div>
-      <div style={styles.metricValue}>{value}</div>
+      <div style={styles.metricHeaderLine}>
+        <span style={styles.metricLabel}>{label}</span>
+
+        {hasBenchmark ? (
+          <span style={styles.metricRangePill}>
+            MIN {buildBenchmarkLabel(benchmarkMin, benchmarkMax, benchmarkFormat)} MAX
+          </span>
+        ) : null}
+      </div>
+
+      <div style={{ ...styles.metricValue, color: valueColor }}>{value}</div>
+
     </div>
   );
 }
@@ -987,6 +1058,9 @@ export default function DashboardPage() {
     cryptos: [],
   });
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [hoveredNav, setHoveredNav] = useState("");
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isCompactHeader, setIsCompactHeader] = useState(false);
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
   const [watchlistLoading, setWatchlistLoading] = useState<boolean>(false);
 
@@ -1003,6 +1077,22 @@ export default function DashboardPage() {
 
   const cleanedTicker = useMemo(() => ticker.trim().toUpperCase(), [ticker]);
   const isLikelyCrypto = useMemo(() => KNOWN_CRYPTO_SYMBOLS.has(cleanedTicker), [cleanedTicker]);
+
+  useEffect(() => {
+    const updateHeaderMode = () => {
+      const compact = window.innerWidth < 980;
+      setIsCompactHeader(compact);
+
+      if (!compact) {
+        setIsMobileNavOpen(false);
+      }
+    };
+
+    updateHeaderMode();
+    window.addEventListener("resize", updateHeaderMode);
+
+    return () => window.removeEventListener("resize", updateHeaderMode);
+  }, []);
 
   useEffect(() => {
     const query = ticker.trim();
@@ -1577,29 +1667,60 @@ export default function DashboardPage() {
     !!stockResult.companyInfo?.symbol &&
     stockResult.assetType === "crypto";
 
+  const navButtonStyle = (key: string): React.CSSProperties => ({
+    ...styles.navButton,
+    ...(hoveredNav === key ? styles.navButtonHover : {}),
+  });
+
+  const headerButtonsStyle: React.CSSProperties = {
+    ...styles.headerButtons,
+    ...(isCompactHeader ? styles.headerButtonsCompact : {}),
+    ...(isCompactHeader && isMobileNavOpen ? styles.headerButtonsCompactOpen : {}),
+  };
+
   return (
     <main style={styles.page}>
       <div style={styles.overlay} />
 
       <div style={styles.wrapper}>
         <div style={styles.header}>
-          <div>
-            <h1 style={styles.title}>Fundamental Analysis Platform</h1>
-            <p style={styles.subtitle}>
-              Enter a stock ticker or crypto symbol, analyze the asset and track your plan limits.
-            </p>
+          <div style={styles.headerGlow} />
+
+          <div style={styles.brandBlock}>
+            <button
+              type="button"
+              style={styles.brandLogoBox}
+              onClick={() => {
+                window.location.href = "/";
+              }}
+              aria-label="Go to homepage"
+            >
+              <img
+                src="/logo.png"
+                alt="Fundamental Analysis Platform logo"
+                style={styles.brandLogoImage}
+              />
+            </button>
+
+            <div style={styles.brandTextWrap}>
+              <div style={styles.brandTopLine}>
+                <span style={styles.brandName}>Fundamental Analysis Platform</span>
+                <span style={styles.proHeaderPill}>PRO DESK</span>
+              </div>
+              <div style={styles.brandSubtext}>
+                Professional stock, crypto and AI analysis dashboard.
+              </div>
+            </div>
           </div>
 
           <div style={styles.headerRight}>
-            <div style={{ ...styles.planBadgeBase, ...getPlanBadgeStyle() }}>
-              <span>{getPlanLabel()}</span>
-              {accessActive && plan !== "basic" ? <span style={styles.planBadgeDot} /> : null}
-            </div>
-
-            <div style={styles.headerButtons}>
+            <div style={headerButtonsStyle}>
               <button
-                style={styles.secondaryButton}
+                style={navButtonStyle("home")}
+                onMouseEnter={() => setHoveredNav("home")}
+                onMouseLeave={() => setHoveredNav("")}
                 onClick={() => {
+                  setIsMobileNavOpen(false);
                   window.location.href = "/";
                 }}
               >
@@ -1607,42 +1728,60 @@ export default function DashboardPage() {
               </button>
 
               <button
-                style={styles.secondaryButton}
+                style={navButtonStyle("contact")}
+                onMouseEnter={() => setHoveredNav("contact")}
+                onMouseLeave={() => setHoveredNav("")}
                 onClick={() => {
+                  setIsMobileNavOpen(false);
+                  window.location.href = "/contact";
+                }}
+              >
+                Contact
+              </button>
+
+              <button
+                style={navButtonStyle("plans")}
+                onMouseEnter={() => setHoveredNav("plans")}
+                onMouseLeave={() => setHoveredNav("")}
+                onClick={() => {
+                  setIsMobileNavOpen(false);
                   window.location.href = "/pricing";
                 }}
               >
                 Plans
               </button>
 
-              {rsiEnabled ? (
-                <button
-                  style={styles.secondaryButton}
-                  onClick={() => {
-                    window.location.href = "/dashboard/rsi";
-                  }}
-                >
-                  RSI Premium
-                </button>
-              ) : (
-                <button
-                  style={styles.rsiLockedButton}
-                  onClick={() => {
-                    window.location.href = "/pricing";
-                  }}
-                >
-                  RSI Premium 🔒
-                </button>
-              )}
+              <button
+                style={navButtonStyle("rsi")}
+                onMouseEnter={() => setHoveredNav("rsi")}
+                onMouseLeave={() => setHoveredNav("")}
+                onClick={() => {
+                  setIsMobileNavOpen(false);
+                  window.location.href = rsiEnabled ? "/dashboard/rsi" : "/pricing";
+                }}
+              >
+                {rsiEnabled ? "RSI Premium" : "RSI Premium 🔒"}
+              </button>
 
               {isLoggedIn ? (
-                <button style={styles.logoutButton} onClick={handleLogout}>
+                <button
+                  style={navButtonStyle("logout")}
+                  onMouseEnter={() => setHoveredNav("logout")}
+                  onMouseLeave={() => setHoveredNav("")}
+                  onClick={() => {
+                    setIsMobileNavOpen(false);
+                    handleLogout();
+                  }}
+                >
                   Logout
                 </button>
               ) : (
                 <button
-                  style={styles.primaryButton}
+                  style={navButtonStyle("login")}
+                  onMouseEnter={() => setHoveredNav("login")}
+                  onMouseLeave={() => setHoveredNav("")}
                   onClick={() => {
+                    setIsMobileNavOpen(false);
                     window.location.href = "/auth";
                   }}
                 >
@@ -1650,6 +1789,23 @@ export default function DashboardPage() {
                 </button>
               )}
             </div>
+
+            <div style={{ ...styles.planBadgeBase, ...getPlanBadgeStyle() }}>
+              <span>{getPlanLabel()}</span>
+              {accessActive && plan !== "basic" ? <span style={styles.planBadgeDot} /> : null}
+            </div>
+
+            <button
+              type="button"
+              style={{
+                ...styles.menuButton,
+                display: isCompactHeader ? "inline-flex" : "none",
+              }}
+              onClick={() => setIsMobileNavOpen((value) => !value)}
+              aria-label="Toggle navigation"
+            >
+              {isMobileNavOpen ? "×" : "☰"}
+            </button>
           </div>
         </div>
 
@@ -1658,9 +1814,9 @@ export default function DashboardPage() {
             <input
               type="text"
               placeholder="Enter company name, stock ticker or crypto symbol, for example Mercedes, AAPL or BTC"
-              value={ticker}
+              value={ticker.toUpperCase()}
               onChange={(e) => {
-                setTicker(e.target.value);
+                setTicker(e.target.value.toUpperCase());
                 setShowSuggestions(true);
               }}
               onFocus={() => {
@@ -1855,6 +2011,9 @@ export default function DashboardPage() {
                         ? "Not applicable"
                         : formatNumber(stockResult.peRatio)
                     }
+                    actualValue={stockResult.assetType === "crypto" ? null : stockResult.peRatio}
+                    benchmarkMin={10}
+                    benchmarkMax={25}
                   />
                   <MetricCard
                     label="ROE"
@@ -1863,6 +2022,10 @@ export default function DashboardPage() {
                         ? "Not applicable"
                         : formatPercent(stockResult.roe)
                     }
+                    actualValue={stockResult.assetType === "crypto" ? null : stockResult.roe}
+                    benchmarkMin={0.1}
+                    benchmarkMax={0.25}
+                    benchmarkFormat="percent"
                   />
                   <MetricCard
                     label="Operating Margin"
@@ -1871,6 +2034,10 @@ export default function DashboardPage() {
                         ? "Not applicable"
                         : formatPercent(stockResult.operatingMargin)
                     }
+                    actualValue={stockResult.assetType === "crypto" ? null : stockResult.operatingMargin}
+                    benchmarkMin={0.1}
+                    benchmarkMax={0.3}
+                    benchmarkFormat="percent"
                   />
                   <MetricCard
                     label="Net Margin"
@@ -1879,6 +2046,10 @@ export default function DashboardPage() {
                         ? "Not applicable"
                         : formatPercent(stockResult.netMargin)
                     }
+                    actualValue={stockResult.assetType === "crypto" ? null : stockResult.netMargin}
+                    benchmarkMin={0.05}
+                    benchmarkMax={0.2}
+                    benchmarkFormat="percent"
                   />
                   <MetricCard
                     label="Debt / Equity"
@@ -1887,6 +2058,9 @@ export default function DashboardPage() {
                         ? "Not applicable"
                         : formatNumber(stockResult.debtToEquity)
                     }
+                    actualValue={stockResult.assetType === "crypto" ? null : stockResult.debtToEquity}
+                    benchmarkMin={0}
+                    benchmarkMax={1.5}
                   />
                   <MetricCard
                     label="AI Score"
@@ -1895,6 +2069,9 @@ export default function DashboardPage() {
                         ? `${stockResult.aiScore.score}/10 (${stockResult.aiScore.signal})`
                         : "No data"
                     }
+                    actualValue={stockResult.aiScore?.score ?? null}
+                    benchmarkMin={4}
+                    benchmarkMax={7}
                   />
                   <MetricCard
                     label="Signal"
@@ -1911,10 +2088,16 @@ export default function DashboardPage() {
                           stockResult.assetType === "crypto" ? "Volume / Network Scale" : "Revenue"
                         }
                         value={formatLargeNumber(stockResult.revenue)}
+                        actualValue={stockResult.revenue}
+                        benchmarkMin={1_000_000_000}
+                        benchmarkMax={100_000_000_000}
                       />
                       <MetricCard
                         label="Market Cap"
                         value={formatLargeNumber(stockResult.marketCap)}
+                        actualValue={stockResult.marketCap}
+                        benchmarkMin={1_000_000_000}
+                        benchmarkMax={500_000_000_000}
                       />
                       <MetricCard
                         label="EPS"
@@ -1923,10 +2106,16 @@ export default function DashboardPage() {
                             ? "Not applicable"
                             : formatNumber(stockResult.eps)
                         }
+                        actualValue={stockResult.assetType === "crypto" ? null : stockResult.eps}
+                        benchmarkMin={0}
+                        benchmarkMax={10}
                       />
                       <MetricCard
                         label="Fair Value"
                         value={formatNumber(stockResult.realValue)}
+                        actualValue={stockResult.realValue}
+                        benchmarkMin={0}
+                        benchmarkMax={500}
                       />
                     </div>
 
@@ -1978,6 +2167,9 @@ export default function DashboardPage() {
                             ? "Not applicable"
                             : formatLargeNumber(stockResult.extraMetrics?.freeCashFlow)
                         }
+                        actualValue={stockResult.assetType === "crypto" ? null : stockResult.extraMetrics?.freeCashFlow}
+                        benchmarkMin={0}
+                        benchmarkMax={50_000_000_000}
                       />
                       <MetricCard
                         label="ROIC / ROA proxy"
@@ -1986,6 +2178,10 @@ export default function DashboardPage() {
                             ? "Not applicable"
                             : formatPercent(stockResult.extraMetrics?.roic)
                         }
+                        actualValue={stockResult.assetType === "crypto" ? null : stockResult.extraMetrics?.roic}
+                        benchmarkMin={0.08}
+                        benchmarkMax={0.25}
+                        benchmarkFormat="percent"
                       />
                       <MetricCard
                         label="Current Ratio"
@@ -1994,10 +2190,17 @@ export default function DashboardPage() {
                             ? "Not applicable"
                             : formatNumber(stockResult.extraMetrics?.currentRatio)
                         }
+                        actualValue={stockResult.assetType === "crypto" ? null : stockResult.extraMetrics?.currentRatio}
+                        benchmarkMin={1}
+                        benchmarkMax={3}
                       />
                       <MetricCard
                         label="Revenue Growth"
                         value={formatPercent(stockResult.extraMetrics?.revenueGrowth)}
+                        actualValue={stockResult.extraMetrics?.revenueGrowth}
+                        benchmarkMin={0.05}
+                        benchmarkMax={0.25}
+                        benchmarkFormat="percent"
                       />
                       <MetricCard
                         label="EPS Growth"
@@ -2005,6 +2208,10 @@ export default function DashboardPage() {
                           stockResult.assetType === "crypto"
                             ? "Not applicable"
                             : formatPercent(stockResult.extraMetrics?.earningsGrowth)}
+                        actualValue={stockResult.assetType === "crypto" ? null : stockResult.extraMetrics?.earningsGrowth}
+                        benchmarkMin={0.05}
+                        benchmarkMax={0.25}
+                        benchmarkFormat="percent"
                       />
                       <MetricCard
                         label="Dividend Yield"
@@ -2013,6 +2220,10 @@ export default function DashboardPage() {
                             ? "Not applicable"
                             : formatPercent(stockResult.extraMetrics?.dividendYield)
                         }
+                        actualValue={stockResult.assetType === "crypto" ? null : stockResult.extraMetrics?.dividendYield}
+                        benchmarkMin={0.01}
+                        benchmarkMax={0.06}
+                        benchmarkFormat="percent"
                       />
                     </div>
                   </>
@@ -2154,29 +2365,55 @@ const styles: Record<string, React.CSSProperties> = {
     margin: "0 auto",
   },
   header: {
+    position: "sticky",
+    top: "14px",
+    zIndex: 20,
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: "20px",
-    marginBottom: "24px",
+    alignItems: "center",
+    gap: "18px",
+    marginBottom: "22px",
     flexWrap: "wrap",
+    padding: "14px 18px",
+    borderRadius: "24px",
+    background:
+      "linear-gradient(135deg, rgba(8,21,47,0.94), rgba(15,39,77,0.76))",
+    border: "1px solid rgba(96,165,250,0.18)",
+    boxShadow:
+      "0 22px 50px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.05)",
+    backdropFilter: "blur(16px)",
+    overflow: "visible",
+  },
+  headerGlow: {
+    position: "absolute",
+    inset: "-1px",
+    borderRadius: "24px",
+    background:
+      "radial-gradient(circle at 12% 0%, rgba(14,165,233,0.20), transparent 34%), radial-gradient(circle at 88% 0%, rgba(59,130,246,0.18), transparent 32%)",
+    pointerEvents: "none",
   },
   headerRight: {
+    position: "relative",
+    zIndex: 2,
     display: "flex",
     alignItems: "center",
-    gap: "14px",
+    justifyContent: "flex-end",
+    gap: "12px",
     flexWrap: "wrap",
+    marginLeft: "auto",
   },
   planBadgeBase: {
     display: "inline-flex",
     alignItems: "center",
     gap: "8px",
     borderRadius: "999px",
-    padding: "10px 14px",
+    padding: "11px 15px",
     fontSize: "12px",
-    fontWeight: 800,
-    letterSpacing: "0.4px",
-    border: "1px solid rgba(255,255,255,0.08)",
+    fontWeight: 900,
+    letterSpacing: "0.5px",
+    border: "1px solid rgba(255,255,255,0.10)",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
+    whiteSpace: "nowrap",
   },
   planBadgeBasic: {
     background: "rgba(51,65,85,0.5)",
@@ -2212,8 +2449,123 @@ const styles: Record<string, React.CSSProperties> = {
   },
   headerButtons: {
     display: "flex",
-    gap: "12px",
+    gap: "10px",
     flexWrap: "wrap",
+    alignItems: "center",
+  },
+  headerButtonsCompact: {
+    position: "absolute",
+    top: "calc(100% + 12px)",
+    right: 0,
+    width: "min(320px, calc(100vw - 40px))",
+    display: "none",
+    flexDirection: "column",
+    alignItems: "stretch",
+    padding: "12px",
+    borderRadius: "18px",
+    background: "rgba(8, 21, 47, 0.98)",
+    border: "1px solid rgba(96,165,250,0.20)",
+    boxShadow: "0 24px 60px rgba(0,0,0,0.44)",
+    backdropFilter: "blur(16px)",
+  },
+  headerButtonsCompactOpen: {
+    display: "flex",
+  },
+  menuButton: {
+    width: "44px",
+    height: "44px",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "14px",
+    background: "rgba(14, 165, 233, 0.16)",
+    color: "white",
+    border: "1px solid rgba(14, 165, 233, 0.34)",
+    fontSize: "22px",
+    fontWeight: 900,
+    cursor: "pointer",
+  },
+  brandBlock: {
+    position: "relative",
+    zIndex: 2,
+    display: "flex",
+    alignItems: "center",
+    gap: "14px",
+    flexWrap: "nowrap",
+    minWidth: 0,
+  },
+  brandLogoBox: {
+    width: "62px",
+    height: "62px",
+    borderRadius: "18px",
+    background:
+      "linear-gradient(135deg, rgba(14,165,233,0.13), rgba(37,99,235,0.04))",
+    border: "1px solid rgba(14,165,233,0.18)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "4px",
+    cursor: "pointer",
+    boxShadow: "0 14px 34px rgba(14,165,233,0.16)",
+  },
+  brandLogoImage: {
+    width: "58px",
+    height: "58px",
+    objectFit: "contain",
+    display: "block",
+  },
+  brandTextWrap: {
+    minWidth: 0,
+  },
+  brandTopLine: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    flexWrap: "wrap",
+  },
+  brandName: {
+    color: "white",
+    fontSize: "21px",
+    fontWeight: 900,
+    letterSpacing: "-0.3px",
+    marginBottom: "4px",
+  },
+  proHeaderPill: {
+    display: "inline-flex",
+    alignItems: "center",
+    borderRadius: "999px",
+    padding: "4px 8px",
+    background: "rgba(34,197,94,0.12)",
+    color: "#86efac",
+    border: "1px solid rgba(34,197,94,0.28)",
+    fontSize: "10px",
+    fontWeight: 900,
+    letterSpacing: "0.5px",
+  },
+  brandSubtext: {
+    color: "#94a3b8",
+    fontSize: "14px",
+    lineHeight: 1.5,
+  },
+  navButton: {
+    background: "rgba(14, 165, 233, 0.14)",
+    color: "#dbeafe",
+    border: "1px solid rgba(14, 165, 233, 0.34)",
+    borderRadius: "14px",
+    padding: "12px 18px",
+    fontSize: "14px",
+    fontWeight: 800,
+    cursor: "pointer",
+    transition: "all 0.18s ease",
+    boxShadow: "0 0 0 rgba(59,130,246,0)",
+    whiteSpace: "nowrap",
+  },
+  navButtonHover: {
+    background: "rgba(37, 99, 235, 0.28)",
+    color: "white",
+    border: "1px solid rgba(59,130,246,0.85)",
+    boxShadow:
+      "0 0 0 1px rgba(59,130,246,0.45), 0 0 28px rgba(37,99,235,0.55)",
+    transform: "translateY(-2px)",
   },
   searchCard: {
     position: "relative",
@@ -2471,8 +2823,8 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#bfdbfe",
     border: "1px solid rgba(59,130,246,0.32)",
     borderRadius: "999px",
-    padding: "4px 8px",
-    fontSize: "10px",
+    padding: "2px 6px",
+    fontSize: "9px",
     fontWeight: 800,
   },
   newsSource: {
@@ -2581,24 +2933,107 @@ const styles: Record<string, React.CSSProperties> = {
   metricCard: {
     background: "rgba(255,255,255,0.02)",
     border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: "12px",
-    padding: "12px 14px",
-    minHeight: "74px",
+    borderRadius: "10px",
+    padding: "10px 12px",
+    minHeight: "56px",
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
+  },
+  metricHeaderLine: {
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: "10px",
+    marginBottom: "4px",
+  },
+  metricRangePill: {
+    background: "rgba(14,165,233,0.18)",
+    color: "#e0f2fe",
+    border: "1px solid rgba(14,165,233,0.42)",
+    borderRadius: "999px",
+    padding: "2px 6px",
+    fontSize: "9px",
+    fontWeight: 900,
+    whiteSpace: "nowrap",
   },
   metricLabel: {
     color: "#94a3b8",
     fontSize: "12px",
     marginBottom: "6px",
   },
+  metricTopRow: {
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: "12px",
+    marginBottom: "8px",
+  },
+  metricRangeBox: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-end",
+    gap: "3px",
+    minWidth: "90px",
+    textAlign: "right",
+  },
+  metricRangeTitle: {
+    color: "#38bdf8",
+    fontSize: "9px",
+    fontWeight: 900,
+    letterSpacing: "0.6px",
+  },
+  metricRangeValue: {
+    color: "#e2e8f0",
+    background: "rgba(14,165,233,0.14)",
+    border: "1px solid rgba(14,165,233,0.32)",
+    borderRadius: "999px",
+    padding: "4px 8px",
+    fontSize: "11px",
+    fontWeight: 900,
+    whiteSpace: "nowrap",
+  },
   metricValue: {
     color: "white",
-    fontSize: "15px",
+    fontSize: "14px",
     fontWeight: 700,
     lineHeight: 1.35,
     wordBreak: "break-word",
+  },
+  metricContentRow: {
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1fr) auto",
+    alignItems: "center",
+    gap: "12px",
+  },
+  metricBenchmark: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: "3px",
+    flexShrink: 0,
+    textAlign: "right",
+    minWidth: "92px",
+    borderLeft: "1px solid rgba(148,163,184,0.18)",
+    paddingLeft: "12px",
+  },
+  metricBenchmarkLabel: {
+    color: "#93c5fd",
+    fontSize: "10px",
+    fontWeight: 900,
+    textTransform: "uppercase",
+    letterSpacing: "0.4px",
+  },
+  metricBenchmarkValue: {
+    color: "#e2e8f0",
+    background: "rgba(14,165,233,0.12)",
+    border: "1px solid rgba(14,165,233,0.24)",
+    borderRadius: "999px",
+    padding: "4px 8px",
+    fontSize: "11px",
+    fontWeight: 900,
+    whiteSpace: "nowrap",
   },
   metricValueSmall: {
     color: "white",
