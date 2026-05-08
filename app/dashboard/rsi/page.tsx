@@ -8,6 +8,12 @@ type TimeframeKey = "15m" | "1h" | "4h" | "12h" | "24h" | "1w";
 type SortDirection = "asc" | "desc";
 type SortColumn = "symbol" | "price" | TimeframeKey;
 
+type Coin = {
+  symbol: string;
+  name: string;
+  pair: string;
+};
+
 type RsiRow = {
   symbol: string;
   name: string;
@@ -18,6 +24,7 @@ type RsiRow = {
 };
 
 const TIMEFRAMES: TimeframeKey[] = ["15m", "1h", "4h", "12h", "24h", "1w"];
+const TABLE_PAGE_SIZE = 20;
 
 const TIMEFRAME_LABELS: Record<TimeframeKey, string> = {
   "15m": "15 Minutes",
@@ -37,7 +44,7 @@ const BINANCE_INTERVALS: Record<TimeframeKey, string> = {
   "1w": "1w",
 };
 
-const COINS = [
+const COINS: Coin[] = [
   { symbol: "BTC", name: "Bitcoin", pair: "BTCUSDT" },
   { symbol: "ETH", name: "Ethereum", pair: "ETHUSDT" },
   { symbol: "SOL", name: "Solana", pair: "SOLUSDT" },
@@ -54,6 +61,81 @@ const COINS = [
   { symbol: "BCH", name: "Bitcoin Cash", pair: "BCHUSDT" },
   { symbol: "LTC", name: "Litecoin", pair: "LTCUSDT" },
   { symbol: "UNI", name: "Uniswap", pair: "UNIUSDT" },
+  { symbol: "NEAR", name: "NEAR Protocol", pair: "NEARUSDT" },
+  { symbol: "APT", name: "Aptos", pair: "APTUSDT" },
+  { symbol: "ARB", name: "Arbitrum", pair: "ARBUSDT" },
+  { symbol: "OP", name: "Optimism", pair: "OPUSDT" },
+  { symbol: "INJ", name: "Injective", pair: "INJUSDT" },
+  { symbol: "SUI", name: "Sui", pair: "SUIUSDT" },
+  { symbol: "FIL", name: "Filecoin", pair: "FILUSDT" },
+  { symbol: "ATOM", name: "Cosmos", pair: "ATOMUSDT" },
+  { symbol: "ETC", name: "Ethereum Classic", pair: "ETCUSDT" },
+  { symbol: "XLM", name: "Stellar", pair: "XLMUSDT" },
+  { symbol: "HBAR", name: "Hedera", pair: "HBARUSDT" },
+  { symbol: "ICP", name: "Internet Computer", pair: "ICPUSDT" },
+  { symbol: "VET", name: "VeChain", pair: "VETUSDT" },
+  { symbol: "AAVE", name: "Aave", pair: "AAVEUSDT" },
+  { symbol: "ALGO", name: "Algorand", pair: "ALGOUSDT" },
+  { symbol: "GRT", name: "The Graph", pair: "GRTUSDT" },
+  { symbol: "MKR", name: "Maker", pair: "MKRUSDT" },
+  { symbol: "STX", name: "Stacks", pair: "STXUSDT" },
+  { symbol: "RUNE", name: "THORChain", pair: "RUNEUSDT" },
+  { symbol: "SEI", name: "Sei", pair: "SEIUSDT" },
+  { symbol: "TIA", name: "Celestia", pair: "TIAUSDT" },
+  { symbol: "WLD", name: "Worldcoin", pair: "WLDUSDT" },
+  { symbol: "FET", name: "Fetch.ai", pair: "FETUSDT" },
+  { symbol: "RENDER", name: "Render", pair: "RENDERUSDT" },
+  { symbol: "QNT", name: "Quant", pair: "QNTUSDT" },
+  { symbol: "MANA", name: "Decentraland", pair: "MANAUSDT" },
+  { symbol: "SAND", name: "The Sandbox", pair: "SANDUSDT" },
+  { symbol: "AXS", name: "Axie Infinity", pair: "AXSUSDT" },
+  { symbol: "EGLD", name: "MultiversX", pair: "EGLDUSDT" },
+  { symbol: "FLOW", name: "Flow", pair: "FLOWUSDT" },
+  { symbol: "KAVA", name: "Kava", pair: "KAVAUSDT" },
+  { symbol: "EOS", name: "EOS", pair: "EOSUSDT" },
+  { symbol: "XTZ", name: "Tezos", pair: "XTZUSDT" },
+  { symbol: "THETA", name: "Theta Network", pair: "THETAUSDT" },
+  { symbol: "CHZ", name: "Chiliz", pair: "CHZUSDT" },
+  { symbol: "CRV", name: "Curve DAO", pair: "CRVUSDT" },
+  { symbol: "COMP", name: "Compound", pair: "COMPUSDT" },
+  { symbol: "SNX", name: "Synthetix", pair: "SNXUSDT" },
+  { symbol: "ZEC", name: "Zcash", pair: "ZECUSDT" },
+  { symbol: "DASH", name: "Dash", pair: "DASHUSDT" },
+  { symbol: "ENJ", name: "Enjin Coin", pair: "ENJUSDT" },
+  { symbol: "BAT", name: "Basic Attention Token", pair: "BATUSDT" },
+  { symbol: "ZIL", name: "Zilliqa", pair: "ZILUSDT" },
+  { symbol: "IOTA", name: "IOTA", pair: "IOTAUSDT" },
+  { symbol: "ONE", name: "Harmony", pair: "ONEUSDT" },
+  { symbol: "ANKR", name: "Ankr", pair: "ANKRUSDT" },
+  { symbol: "LRC", name: "Loopring", pair: "LRCUSDT" },
+  { symbol: "KSM", name: "Kusama", pair: "KSMUSDT" },
+  { symbol: "MINA", name: "Mina", pair: "MINAUSDT" },
+  { symbol: "DYDX", name: "dYdX", pair: "DYDXUSDT" },
+  { symbol: "GMX", name: "GMX", pair: "GMXUSDT" },
+  { symbol: "LDO", name: "Lido DAO", pair: "LDOUSDT" },
+  { symbol: "PEPE", name: "Pepe", pair: "PEPEUSDT" },
+  { symbol: "FLOKI", name: "Floki", pair: "FLOKIUSDT" },
+  { symbol: "BONK", name: "Bonk", pair: "BONKUSDT" },
+  { symbol: "WIF", name: "dogwifhat", pair: "WIFUSDT" },
+  { symbol: "JUP", name: "Jupiter", pair: "JUPUSDT" },
+  { symbol: "PYTH", name: "Pyth Network", pair: "PYTHUSDT" },
+  { symbol: "STRK", name: "Starknet", pair: "STRKUSDT" },
+  { symbol: "JTO", name: "Jito", pair: "JTOUSDT" },
+  { symbol: "ORDI", name: "ORDI", pair: "ORDIUSDT" },
+  { symbol: "AR", name: "Arweave", pair: "ARUSDT" },
+  { symbol: "IMX", name: "Immutable", pair: "IMXUSDT" },
+  { symbol: "GALA", name: "Gala", pair: "GALAUSDT" },
+  { symbol: "ROSE", name: "Oasis Network", pair: "ROSEUSDT" },
+  { symbol: "CFX", name: "Conflux", pair: "CFXUSDT" },
+  { symbol: "BLUR", name: "Blur", pair: "BLURUSDT" },
+  { symbol: "APE", name: "ApeCoin", pair: "APEUSDT" },
+  { symbol: "ENS", name: "Ethereum Name Service", pair: "ENSUSDT" },
+  { symbol: "MASK", name: "Mask Network", pair: "MASKUSDT" },
+  { symbol: "AGIX", name: "SingularityNET", pair: "AGIXUSDT" },
+  { symbol: "1INCH", name: "1inch", pair: "1INCHUSDT" },
+  { symbol: "CAKE", name: "PancakeSwap", pair: "CAKEUSDT" },
+  { symbol: "SUSHI", name: "SushiSwap", pair: "SUSHIUSDT" },
+  { symbol: "YFI", name: "yearn.finance", pair: "YFIUSDT" },
 ];
 
 function getLogoUrl(symbol: string) {
@@ -102,11 +184,11 @@ async function fetchBinanceCloses(pair: string, timeframe: TimeframeKey) {
 
   if (!res.ok) throw new Error("Binance failed");
 
-  const data = await res.json();
+  const data: unknown = await res.json();
 
   return Array.isArray(data)
     ? data
-        .map((row) => Number(row?.[4]))
+        .map((row) => (Array.isArray(row) ? Number(row[4]) : Number.NaN))
         .filter((value) => Number.isFinite(value))
     : [];
 }
@@ -132,8 +214,8 @@ async function fetchCryptoCompareCloses(symbol: string, timeframe: TimeframeKey)
 
   return Array.isArray(rows)
     ? rows
-        .map((row) => Number(row?.close))
-        .filter((value) => Number.isFinite(value))
+        .map((row: { close?: number | string }) => Number(row?.close))
+        .filter((value: number) => Number.isFinite(value))
     : [];
 }
 
@@ -145,7 +227,7 @@ async function fetchCloses(symbol: string, pair: string, timeframe: TimeframeKey
   }
 }
 
-async function buildClientRow(coin: (typeof COINS)[number]): Promise<RsiRow> {
+async function buildClientRow(coin: Coin): Promise<RsiRow> {
   const results = await Promise.all(
     TIMEFRAMES.map(async (tf) => {
       try {
@@ -177,8 +259,56 @@ async function buildClientRow(coin: (typeof COINS)[number]): Promise<RsiRow> {
   };
 }
 
+async function buildClientRowsInBatches(coins: Coin[], batchSize = 8): Promise<RsiRow[]> {
+  const output: RsiRow[] = [];
+
+  for (let i = 0; i < coins.length; i += batchSize) {
+    const batch = coins.slice(i, i + batchSize);
+    const batchRows = await Promise.all(batch.map(buildClientRow));
+    output.push(...batchRows);
+  }
+
+  return output;
+}
+
 function hasRealRsi(rows: RsiRow[]) {
   return rows.some((row) => TIMEFRAMES.some((tf) => typeof row.rsi?.[tf] === "number"));
+}
+
+function normalizeApiRow(row: Partial<RsiRow>, coin: Coin): RsiRow {
+  return {
+    symbol: row.symbol ?? coin.symbol,
+    name: row.name ?? coin.name,
+    pair: row.pair ?? coin.pair,
+    logoUrl: row.logoUrl ?? getLogoUrl(coin.symbol),
+    price: typeof row.price === "number" ? row.price : null,
+    rsi: {
+      ...emptyRsi(),
+      ...(row.rsi ?? {}),
+    },
+  };
+}
+
+function mergeRowsWithCoinList(apiRows: RsiRow[], clientRows: RsiRow[]) {
+  const apiMap = new Map(apiRows.map((row) => [row.symbol, row]));
+  const clientMap = new Map(clientRows.map((row) => [row.symbol, row]));
+
+  return COINS.map((coin) => {
+    const apiRow = apiMap.get(coin.symbol);
+    const clientRow = clientMap.get(coin.symbol);
+
+    if (apiRow && hasRealRsi([apiRow])) return normalizeApiRow(apiRow, coin);
+    if (clientRow) return clientRow;
+
+    return {
+      symbol: coin.symbol,
+      name: coin.name,
+      pair: coin.pair,
+      logoUrl: getLogoUrl(coin.symbol),
+      price: null,
+      rsi: emptyRsi(),
+    };
+  });
 }
 
 function formatPrice(value: number | null | undefined) {
@@ -215,6 +345,7 @@ function getSafeSortNumber(value: number | null | undefined, direction: SortDire
   if (value === null || value === undefined || Number.isNaN(value)) {
     return direction === "asc" ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY;
   }
+
   return value;
 }
 
@@ -233,7 +364,11 @@ function AssetLogo({ symbol, name, logoUrl }: { symbol: string; name: string; lo
 }
 
 function SortArrow({ active, direction }: { active: boolean; direction: SortDirection }) {
-  return <span style={active ? styles.sortArrowActive : styles.sortArrowInactive}>{active ? (direction === "asc" ? "↑" : "↓") : "↕"}</span>;
+  return (
+    <span style={active ? styles.sortArrowActive : styles.sortArrowInactive}>
+      {active ? (direction === "asc" ? "↑" : "↓") : "↕"}
+    </span>
+  );
 }
 
 export default function PremiumRsiPage() {
@@ -247,6 +382,7 @@ export default function PremiumRsiPage() {
   const [updatedAt, setUpdatedAt] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [dataSource, setDataSource] = useState("Зареждане...");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [sortColumn, setSortColumn] = useState<SortColumn>("15m");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
@@ -297,6 +433,7 @@ export default function PremiumRsiPage() {
   useEffect(() => {
     setSortColumn(selectedTimeframe);
     setSortDirection("desc");
+    setCurrentPage(1);
   }, [selectedTimeframe]);
 
   useEffect(() => {
@@ -315,25 +452,30 @@ export default function PremiumRsiPage() {
           const data = await res.json();
 
           if (res.ok && Array.isArray(data?.rows)) {
-            apiRows = data.rows;
+            apiRows = data.rows as RsiRow[];
           }
         } catch {}
 
-        if (hasRealRsi(apiRows)) {
-          if (mounted) {
-            setRows(apiRows);
-            setUpdatedAt(new Date().toISOString());
-            setDataSource("API");
-          }
-          return;
-        }
+        const apiSymbolsWithRsi = new Set(
+          apiRows
+            .filter((row) => hasRealRsi([row]))
+            .map((row) => row.symbol)
+        );
 
-        const clientRows = await Promise.all(COINS.map(buildClientRow));
+        const missingCoins = COINS.filter((coin) => !apiSymbolsWithRsi.has(coin.symbol));
+        const shouldBuildFallbackRows = !hasRealRsi(apiRows) || missingCoins.length > 0;
+
+        const clientRows = shouldBuildFallbackRows
+          ? await buildClientRowsInBatches(missingCoins.length ? missingCoins : COINS)
+          : [];
+
+        const finalRows = mergeRowsWithCoinList(apiRows, clientRows);
 
         if (mounted) {
-          setRows(clientRows);
+          setRows(finalRows);
           setUpdatedAt(new Date().toISOString());
-          setDataSource("Client fallback");
+          setDataSource(hasRealRsi(apiRows) ? "API + Client fallback" : "Client fallback");
+          setCurrentPage(1);
         }
       } catch (error) {
         console.error("RSI load error:", error);
@@ -348,6 +490,7 @@ export default function PremiumRsiPage() {
             }))
           );
           setDataSource("Грешка при зареждане");
+          setCurrentPage(1);
         }
       } finally {
         if (mounted) setIsRefreshing(false);
@@ -390,7 +533,20 @@ export default function PremiumRsiPage() {
     return cloned;
   }, [rows, sortColumn, sortDirection]);
 
+  const totalPages = Math.max(1, Math.ceil(sortedRows.length / TABLE_PAGE_SIZE));
+
+  const paginatedRows = useMemo(() => {
+    const start = (currentPage - 1) * TABLE_PAGE_SIZE;
+    return sortedRows.slice(start, start + TABLE_PAGE_SIZE);
+  }, [sortedRows, currentPage]);
+
+  const paginationItems = useMemo(() => {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }, [totalPages]);
+
   const handleSort = (column: SortColumn) => {
+    setCurrentPage(1);
+
     if (sortColumn === column) {
       setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
       return;
@@ -398,6 +554,10 @@ export default function PremiumRsiPage() {
 
     setSortColumn(column);
     setSortDirection(column === "symbol" ? "asc" : "desc");
+  };
+
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.min(Math.max(page, 1), totalPages));
   };
 
   if (loading) {
@@ -437,7 +597,9 @@ export default function PremiumRsiPage() {
         <div style={styles.header}>
           <div>
             <h1 style={styles.title}>RSI Stats</h1>
-            <p style={styles.subtitle}>Реални RSI стойности за водещи криптовалути по няколко таймфрейма.</p>
+            <p style={styles.subtitle}>
+              Реални RSI стойности за всички следени криптовалути по няколко таймфрейма.
+            </p>
           </div>
 
           <button style={styles.secondaryButton} onClick={() => (window.location.href = "/dashboard")}>
@@ -455,6 +617,7 @@ export default function PremiumRsiPage() {
             <div style={styles.updateText}>Обновено: {updatedAt ? new Date(updatedAt).toLocaleString() : "—"}</div>
             <div style={styles.refreshBadge}>{isRefreshing ? "Обновяване..." : "Auto refresh: 60s"}</div>
             <div style={styles.refreshBadge}>Source: {dataSource}</div>
+            <div style={styles.refreshBadge}>Coins: {sortedRows.length}</div>
           </div>
         </div>
 
@@ -479,42 +642,54 @@ export default function PremiumRsiPage() {
             </div>
           </div>
 
-          <div style={styles.heatmapArea}>
-            <div style={{ ...styles.band, ...styles.bandTop }} />
-            <div style={{ ...styles.band, ...styles.bandUpper }} />
-            <div style={{ ...styles.band, ...styles.bandMiddle }} />
-            <div style={{ ...styles.band, ...styles.bandLower }} />
-            <div style={{ ...styles.band, ...styles.bandBottom }} />
+          <div style={styles.heatmapScroll}>
+            <div
+              style={{
+                ...styles.heatmapArea,
+                width: `${Math.max(1280, sortedRows.length * 54)}px`,
+              }}
+            >
+              <div style={{ ...styles.band, ...styles.bandTop }} />
+              <div style={{ ...styles.band, ...styles.bandUpper }} />
+              <div style={{ ...styles.band, ...styles.bandMiddle }} />
+              <div style={{ ...styles.band, ...styles.bandLower }} />
+              <div style={{ ...styles.band, ...styles.bandBottom }} />
 
-            {[0, 20, 40, 60, 80, 100].map((value) => (
-              <div key={value} style={{ ...styles.axisLine, bottom: `${value}%` }}>
-                <span style={styles.axisLabel}>{value}</span>
-              </div>
-            ))}
-
-            {sortedRows.map((row, index) => {
-              const value = row.rsi[selectedTimeframe];
-              const safeValue = value ?? 50;
-              const left = ((index + 1) / (sortedRows.length + 1)) * 100;
-
-              return (
-                <div
-                  key={`${row.symbol}-${selectedTimeframe}`}
-                  style={{ ...styles.pointWrap, left: `${left}%`, bottom: `${safeValue}%` }}
-                  title={`${row.symbol} • RSI ${formatRsi(value)}`}
-                >
-                  <div style={styles.pointLabel}>{row.symbol}</div>
-                  <div style={{ ...styles.pointDot, borderColor: getRsiColor(value) }} />
-                  <div style={{ ...styles.pointStem, background: getRsiColor(value) }} />
+              {[0, 20, 40, 60, 80, 100].map((value) => (
+                <div key={value} style={{ ...styles.axisLine, bottom: `${value}%` }}>
+                  <span style={styles.axisLabel}>{value}</span>
                 </div>
-              );
-            })}
+              ))}
+
+              {sortedRows.map((row, index) => {
+                const value = row.rsi[selectedTimeframe];
+                const safeValue = value ?? 50;
+                const left = ((index + 1) / (sortedRows.length + 1)) * 100;
+
+                return (
+                  <div
+                    key={`${row.symbol}-${selectedTimeframe}`}
+                    style={{ ...styles.pointWrap, left: `${left}%`, bottom: `${safeValue}%` }}
+                    title={`${row.symbol} • RSI ${formatRsi(value)}`}
+                  >
+                    <div style={styles.pointLabel}>{row.symbol}</div>
+                    <div style={{ ...styles.pointDot, borderColor: getRsiColor(value) }} />
+                    <div style={{ ...styles.pointStem, background: getRsiColor(value) }} />
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
 
         <div style={styles.sectionCard}>
           <div style={styles.sectionHeader}>
-            <h2 style={styles.sectionTitle}>RSI Table</h2>
+            <div>
+              <h2 style={styles.sectionTitle}>RSI Table</h2>
+              <p style={styles.sectionNote}>
+                Показани са {paginatedRows.length} от {sortedRows.length} криптовалути. По 20 криптовалути на страница.
+              </p>
+            </div>
             <div style={styles.tableInfo}>Кликни върху заглавие на колона за сортиране</div>
           </div>
 
@@ -538,7 +713,7 @@ export default function PremiumRsiPage() {
               </thead>
 
               <tbody>
-                {sortedRows.map((row) => (
+                {paginatedRows.map((row) => (
                   <tr key={row.symbol}>
                     <td style={styles.td}>
                       <div style={styles.symbolCell}>
@@ -570,6 +745,59 @@ export default function PremiumRsiPage() {
               </tbody>
             </table>
           </div>
+
+          <div style={styles.paginationWrap}>
+            <button
+              type="button"
+              style={{
+                ...styles.paginationButton,
+                ...(currentPage === 1 ? styles.paginationButtonDisabled : {}),
+              }}
+              disabled={currentPage === 1}
+              onClick={() => goToPage(currentPage - 1)}
+            >
+              ← Предишна
+            </button>
+
+            <div style={styles.paginationPages}>
+              {paginationItems.map((page) => (
+                <button
+                  key={page}
+                  type="button"
+                  style={{
+                    ...styles.paginationPageButton,
+                    ...(currentPage === page ? styles.paginationPageButtonActive : {}),
+                  }}
+                  onClick={() => goToPage(page)}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              style={{
+                ...styles.paginationButton,
+                ...(currentPage === totalPages ? styles.paginationButtonDisabled : {}),
+              }}
+              disabled={currentPage === totalPages}
+              onClick={() => goToPage(currentPage + 1)}
+            >
+              Следваща →
+            </button>
+          </div>
+
+          <div style={styles.pageCoinList}>
+            <div style={styles.pageCoinListTitle}>Криптовалути на страница {currentPage}</div>
+            <div style={styles.pageCoinGrid}>
+              {paginatedRows.map((row) => (
+                <span key={`listed-${row.symbol}`} style={styles.pageCoinPill}>
+                  {row.symbol}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div style={styles.sectionCard}>
@@ -580,7 +808,8 @@ export default function PremiumRsiPage() {
               Над 70 често означава свръхкупен актив, а под 30 — свръхпродаден.
             </p>
             <p>
-              Тази таблица показва RSI по няколко таймфрейма, за да виждаш краткосрочен и по-широк моментум.
+              Heatmap секцията показва всички криптовалути от списъка, а таблицата е разделена на страници по 20 актива,
+              за да остане бърза, четима и удобна за анализ.
             </p>
           </div>
         </div>
@@ -711,6 +940,11 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 800,
     margin: 0,
   },
+  sectionNote: {
+    color: "#9ca3af",
+    fontSize: "13px",
+    margin: "6px 0 0",
+  },
   tableInfo: {
     color: "#9ca3af",
     fontSize: "13px",
@@ -734,6 +968,12 @@ const styles: Record<string, React.CSSProperties> = {
     background: "rgba(245,158,11,0.18)",
     color: "#fbbf24",
     border: "1px solid rgba(245,158,11,0.35)",
+  },
+  heatmapScroll: {
+    width: "100%",
+    overflowX: "auto",
+    overflowY: "hidden",
+    borderRadius: "16px",
   },
   heatmapArea: {
     position: "relative",
@@ -776,8 +1016,9 @@ const styles: Record<string, React.CSSProperties> = {
   },
   pointLabel: {
     color: "#e5e7eb",
-    fontSize: "12px",
+    fontSize: "11px",
     fontWeight: 700,
+    whiteSpace: "nowrap",
   },
   pointDot: {
     width: "14px",
@@ -860,6 +1101,79 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "13px",
     fontWeight: 800,
     border: "1px solid rgba(255,255,255,0.06)",
+  },
+  paginationWrap: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "12px",
+    flexWrap: "wrap",
+    marginTop: "18px",
+    paddingTop: "18px",
+    borderTop: "1px solid rgba(255,255,255,0.08)",
+  },
+  paginationPages: {
+    display: "flex",
+    gap: "8px",
+    flexWrap: "wrap",
+    justifyContent: "center",
+  },
+  paginationButton: {
+    background: "rgba(245,158,11,0.12)",
+    color: "#fbbf24",
+    border: "1px solid rgba(245,158,11,0.24)",
+    borderRadius: "12px",
+    padding: "10px 14px",
+    fontSize: "13px",
+    fontWeight: 800,
+    cursor: "pointer",
+  },
+  paginationButtonDisabled: {
+    opacity: 0.45,
+    cursor: "not-allowed",
+  },
+  paginationPageButton: {
+    width: "38px",
+    height: "38px",
+    borderRadius: "12px",
+    background: "rgba(255,255,255,0.04)",
+    color: "#d1d5db",
+    border: "1px solid rgba(255,255,255,0.08)",
+    fontSize: "13px",
+    fontWeight: 800,
+    cursor: "pointer",
+  },
+  paginationPageButtonActive: {
+    background: "rgba(245,158,11,0.22)",
+    color: "#facc15",
+    border: "1px solid rgba(245,158,11,0.38)",
+  },
+  pageCoinList: {
+    marginTop: "18px",
+    padding: "14px",
+    borderRadius: "14px",
+    background: "rgba(255,255,255,0.025)",
+    border: "1px solid rgba(255,255,255,0.06)",
+  },
+  pageCoinListTitle: {
+    color: "#d1d5db",
+    fontSize: "13px",
+    fontWeight: 800,
+    marginBottom: "10px",
+  },
+  pageCoinGrid: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "8px",
+  },
+  pageCoinPill: {
+    color: "#fbbf24",
+    background: "rgba(245,158,11,0.11)",
+    border: "1px solid rgba(245,158,11,0.18)",
+    borderRadius: "999px",
+    padding: "6px 10px",
+    fontSize: "12px",
+    fontWeight: 800,
   },
   explainerText: {
     color: "#d1d5db",
