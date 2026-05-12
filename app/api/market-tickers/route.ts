@@ -8,15 +8,21 @@ type MarketTickerItem = {
   points: number[];
 };
 
-type FmpIndexQuote = {
+type YahooQuote = {
   symbol?: string;
-  name?: string;
-  price?: number;
-  change?: number;
-  changesPercentage?: number;
+  shortName?: string;
+  regularMarketPrice?: number;
+  regularMarketChange?: number;
+  regularMarketChangePercent?: number;
 };
 
-const FMP_BATCH_INDEX_QUOTES_URL = "https://financialmodelingprep.com/stable/batch-index-quotes";
+const SYMBOLS = [
+  { label: "S&P 500", symbol: "^GSPC" },
+  { label: "Dow 30", symbol: "^DJI" },
+  { label: "Nasdaq", symbol: "^IXIC" },
+  { label: "Gold", symbol: "GC=F" },
+  { label: "Silver", symbol: "SI=F" },
+];
 
 const FALLBACK_TICKERS: MarketTickerItem[] = [
   {
@@ -97,86 +103,82 @@ function buildPoints(price?: number, positive?: boolean) {
   ].map((v) => Number(v.toFixed(2)));
 }
 
-async function getBatchIndexQuotes(): Promise<FmpIndexQuote[]> {
-  const apiKey = process.env.FMP_API_KEY;
-
-  if (!apiKey) {
-    console.error("Missing FMP_API_KEY");
-    return [];
-  }
-
-  const url = `${FMP_BATCH_INDEX_QUOTES_URL}?apikey=${apiKey}`;
+async function getYahooQuotes(): Promise<YahooQuote[]> {
+  const symbols = SYMBOLS.map((item) => item.symbol).join(",");
+  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbols)}`;
 
   try {
-    const response = await fetch(url, { cache: "no-store" });
-    const data = await response.json();
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+        "Accept": "application/json",
+      },
+      next: { revalidate: 300 },
+    });
 
-    if (data?.["Error Message"]) {
-      console.error("FMP limit reached:", data["Error Message"]);
+    if (!response.ok) {
+      console.error("Yahoo quote response error:", response.status);
       return [];
     }
 
-    if (Array.isArray(data)) {
-      return data;
-    }
-
-    return [];
+    const data = await response.json();
+    return data?.quoteResponse?.result ?? [];
   } catch (error) {
-    console.error("FMP batch index fetch error:", error);
+    console.error("Yahoo quote fetch error:", error);
     return [];
   }
 }
 
-function normalizeLabel(text?: string) {
-  return (text || "").toLowerCase().replace(/\s+/g, " ").trim();
-}
-
-function findBestMatch(quotes: FmpIndexQuote[], targets: string[]) {
-  const loweredTargets = targets.map((t) => t.toLowerCase());
-
-  return quotes.find((quote) => {
-    const symbol = normalizeLabel(quote.symbol);
-    const name = normalizeLabel(quote.name);
-
-    return loweredTargets.some((target) => symbol.includes(target) || name.includes(target));
-  });
-}
-
-function toTicker(label: string, quote: FmpIndexQuote | undefined, fallback: MarketTickerItem): MarketTickerItem {
-  if (!quote || typeof quote.price !== "number") {
+function toTicker(
+  label: string,
+  quote: YahooQuote | undefined,
+  fallback: MarketTickerItem
+): MarketTickerItem {
+  if (!quote || typeof quote.regularMarketPrice !== "number") {
     return fallback;
   }
 
-  const positive = typeof quote.change === "number" ? quote.change >= 0 : false;
+  const positive =
+    typeof quote.regularMarketChange === "number"
+      ? quote.regularMarketChange >= 0
+      : false;
 
   return {
     label,
-    value: formatValue(quote.price, 2),
-    change: formatChange(quote.change, quote.changesPercentage),
+    value: formatValue(quote.regularMarketPrice, 2),
+    change: formatChange(
+      quote.regularMarketChange,
+      quote.regularMarketChangePercent
+    ),
     positive,
-    points: buildPoints(quote.price, positive),
+    points: buildPoints(quote.regularMarketPrice, positive),
   };
 }
 
 export async function GET() {
   try {
-    const quotes = await getBatchIndexQuotes();
+    const quotes = await getYahooQuotes();
 
-    const sp500 = findBestMatch(quotes, ["s&p 500", "spx", "gspc"]);
-    const dow30 = findBestMatch(quotes, ["dow jones", "dow 30", "dji"]);
-    const nasdaq = findBestMatch(quotes, ["nasdaq 100", "nasdaq composite", "ixic", "ndx"]);
-    const gold = findBestMatch(quotes, ["gold", "gcusd"]);
-    const silver = findBestMatch(quotes, ["silver", "siusd"]);
+    const bySymbol = new Map(
+      quotes.map((quote) => [quote.symbol, quote] as const)
+    );
 
-    return NextResponse.json([
-      toTicker("S&P 500", sp500, FALLBACK_TICKERS[0]),
-      toTicker("Dow 30", dow30, FALLBACK_TICKERS[1]),
-      toTicker("Nasdaq", nasdaq, FALLBACK_TICKERS[2]),
-      toTicker("Gold", gold, FALLBACK_TICKERS[3]),
-      toTicker("Silver", silver, FALLBACK_TICKERS[4]),
-    ]);
+    const results: MarketTickerItem[] = [
+      toTicker("S&P 500", bySymbol.get("^GSPC"), FALLBACK_TICKERS[0]),
+      toTicker("Dow 30", bySymbol.get("^DJI"), FALLBACK_TICKERS[1]),
+      toTicker("Nasdaq", bySymbol.get("^IXIC"), FALLBACK_TICKERS[2]),
+      toTicker("Gold", bySymbol.get("GC=F"), FALLBACK_TICKERS[3]),
+      toTicker("Silver", bySymbol.get("SI=F"), FALLBACK_TICKERS[4]),
+    ];
+
+    return NextResponse.json(results, {
+      status: 200,
+      headers: {
+        "Cache-Control": "s-maxage=300, stale-while-revalidate=600",
+      },
+    });
   } catch (error) {
-    console.error("FMP MARKET TICKERS ERROR:", error);
-    return NextResponse.json(FALLBACK_TICKERS);
+    console.error("YAHOO MARKET TICKERS ERROR:", error);
+    return NextResponse.json(FALLBACK_TICKERS, { status: 200 });
   }
 }
