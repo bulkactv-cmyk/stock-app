@@ -8,53 +8,20 @@ type MarketTickerItem = {
   points: number[];
 };
 
-type FmpQuote = {
-  symbol?: string;
-  name?: string;
-  price?: number;
-  change?: number;
-  changesPercentage?: number;
+type AlphaVantageGlobalQuote = {
+  "Global Quote"?: {
+    "01. symbol"?: string;
+    "05. price"?: string;
+    "09. change"?: string;
+    "10. change percent"?: string;
+  };
 };
 
-const FMP_BASE_URL = "https://financialmodelingprep.com/api/v3";
-
-const FALLBACK_TICKERS: MarketTickerItem[] = [
-  {
-    label: "S&P 500",
-    value: "—",
-    change: "Unavailable",
-    positive: false,
-    points: [70, 68, 66, 65, 61, 58, 56, 54, 57, 52, 49, 46, 44, 42, 45, 41],
-  },
-  {
-    label: "Dow 30",
-    value: "—",
-    change: "Unavailable",
-    positive: false,
-    points: [62, 61, 60, 61, 63, 66, 68, 70, 66, 67, 69, 71, 70, 71, 72, 73],
-  },
-  {
-    label: "Nasdaq",
-    value: "—",
-    change: "Unavailable",
-    positive: false,
-    points: [78, 76, 73, 70, 67, 64, 61, 59, 57, 54, 52, 48, 45, 43, 40, 38],
-  },
-  {
-    label: "Gold",
-    value: "2,350.00",
-    change: "+0.00 (+0.00%)",
-    positive: true,
-    points: [2290, 2298, 2302, 2310, 2318, 2324, 2330, 2334, 2338, 2342, 2344, 2346, 2348, 2349, 2350, 2350],
-  },
-  {
-    label: "Silver",
-    value: "27.50",
-    change: "+0.00 (+0.00%)",
-    positive: true,
-    points: [26.2, 26.4, 26.5, 26.7, 26.8, 26.9, 27.0, 27.1, 27.15, 27.2, 27.25, 27.3, 27.35, 27.4, 27.45, 27.5],
-  },
-];
+const FALLBACK_SHAPES = {
+  negative: [70, 68, 66, 65, 61, 58, 56, 54, 57, 52, 49, 46, 44, 42, 45, 41],
+  neutral: [62, 61, 60, 61, 63, 66, 68, 70, 66, 67, 69, 71, 70, 71, 72, 73],
+  positive: [38, 40, 42, 44, 47, 49, 53, 55, 57, 60, 58, 61, 64, 66, 68, 72],
+};
 
 function formatValue(value?: number, digits = 2) {
   if (typeof value !== "number" || Number.isNaN(value)) return "—";
@@ -121,82 +88,121 @@ function buildPoints(price?: number, positive?: boolean) {
   ].map((v) => Number(v.toFixed(2)));
 }
 
-async function getQuote(symbol: string): Promise<FmpQuote | null> {
-  const apiKey = process.env.FMP_API_KEY;
-  if (!apiKey) return null;
+async function getAlphaQuote(symbol: string) {
+  const apiKey = process.env.ALPHA_VANTAGE_KEY;
 
-  const url = `${FMP_BASE_URL}/quote/${encodeURIComponent(symbol)}?apikey=${apiKey}`;
+  if (!apiKey) {
+    console.error("Missing ALPHA_VANTAGE_KEY");
+    return null;
+  }
+
+  const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(symbol)}&apikey=${apiKey}`;
 
   try {
     const response = await fetch(url, { cache: "no-store" });
 
     if (!response.ok) {
-      console.error("FMP response error:", response.status, url);
+      console.error("Alpha Vantage response error:", response.status, url);
       return null;
     }
 
-    const data = await response.json();
-    console.log(`FMP raw response for ${symbol}:`, JSON.stringify(data));
+    const data: AlphaVantageGlobalQuote = await response.json();
+    console.log(`Alpha raw response for ${symbol}:`, JSON.stringify(data));
 
-    if (Array.isArray(data) && data.length > 0) {
-      return data[0];
-    }
+    const quote = data?.["Global Quote"];
+    if (!quote) return null;
 
-    return null;
+    const price = Number(quote["05. price"]);
+    const change = Number(quote["09. change"]);
+    const percentRaw = quote["10. change percent"]?.replace("%", "");
+    const percent = Number(percentRaw);
+
+    if (Number.isNaN(price)) return null;
+
+    return { price, change, percent };
   } catch (error) {
-    console.error(`FMP fetch error for ${symbol}:`, error);
+    console.error(`Alpha fetch error for ${symbol}:`, error);
     return null;
   }
 }
 
-async function buildTicker(label: string, symbol: string, fallback: MarketTickerItem): Promise<MarketTickerItem> {
-  const quote = await getQuote(symbol);
+async function buildTicker(label: string, symbol: string, shape: number[]): Promise<MarketTickerItem> {
+  const quote = await getAlphaQuote(symbol);
 
-  if (!quote || typeof quote.price !== "number") {
-    console.error(`No valid price for ${label}`, quote);
-    return fallback;
+  if (!quote) {
+    return {
+      label,
+      value: "—",
+      change: "Unavailable",
+      positive: false,
+      points: shape,
+    };
   }
 
-  const price = quote.price;
-  const change = quote.change;
-  const percent = quote.changesPercentage;
-  const positive = typeof change === "number" ? change >= 0 : false;
+  const positive = typeof quote.change === "number" ? quote.change >= 0 : false;
 
   return {
     label,
-    value: formatValue(price, 2),
-    change: formatChange(change, percent),
+    value: formatValue(quote.price, 2),
+    change: formatChange(quote.change, quote.percent),
     positive,
-    points: buildPoints(price, positive),
+    points: buildPoints(quote.price, positive),
   };
 }
 
 export async function GET() {
   try {
-    const apiKey = process.env.FMP_API_KEY;
-
-    if (!apiKey) {
-      console.error("Missing FMP_API_KEY");
-      return NextResponse.json(FALLBACK_TICKERS, { status: 200 });
-    }
-
-    const [sp500, dow30, nasdaq] = await Promise.all([
-      buildTicker("S&P 500", "^GSPC", FALLBACK_TICKERS[0]),
-      buildTicker("Dow 30", "^DJI", FALLBACK_TICKERS[1]),
-      buildTicker("Nasdaq", "^IXIC", FALLBACK_TICKERS[2]),
+    const [sp500, dow30, nasdaq, gold, silver] = await Promise.all([
+      buildTicker("S&P 500", "SPY", FALLBACK_SHAPES.negative),
+      buildTicker("Dow 30", "DIA", FALLBACK_SHAPES.neutral),
+      buildTicker("Nasdaq", "QQQ", FALLBACK_SHAPES.negative),
+      buildTicker("Gold", "GLD", FALLBACK_SHAPES.positive),
+      buildTicker("Silver", "SLV", FALLBACK_SHAPES.positive),
     ]);
 
-    const results: MarketTickerItem[] = [
-      sp500,
-      dow30,
-      nasdaq,
-      FALLBACK_TICKERS[3],
-      FALLBACK_TICKERS[4],
-    ];
-
-    return NextResponse.json(results, { status: 200 });
+    return NextResponse.json([sp500, dow30, nasdaq, gold, silver], { status: 200 });
   } catch (error) {
     console.error("MARKET TICKERS ERROR:", error);
-    return NextResponse.json(FALLBACK_TICKERS, { status: 200 });
+
+    return NextResponse.json(
+      [
+        {
+          label: "S&P 500",
+          value: "—",
+          change: "Unavailable",
+          positive: false,
+          points: FALLBACK_SHAPES.negative,
+        },
+        {
+          label: "Dow 30",
+          value: "—",
+          change: "Unavailable",
+          positive: false,
+          points: FALLBACK_SHAPES.neutral,
+        },
+        {
+          label: "Nasdaq",
+          value: "—",
+          change: "Unavailable",
+          positive: false,
+          points: FALLBACK_SHAPES.negative,
+        },
+        {
+          label: "Gold",
+          value: "—",
+          change: "Unavailable",
+          positive: false,
+          points: FALLBACK_SHAPES.positive,
+        },
+        {
+          label: "Silver",
+          value: "—",
+          change: "Unavailable",
+          positive: false,
+          points: FALLBACK_SHAPES.positive,
+        },
+      ],
+      { status: 200 }
+    );
   }
 }
