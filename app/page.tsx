@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createClient } from "../lib/supabase/client";
 
 type PlanType = "basic" | "pro" | "unlimited" | "loading" | "guest";
@@ -16,6 +16,14 @@ type NewsItem = {
   source: string;
   url: string;
   tag: string;
+};
+
+type MarketTickerItem = {
+  label: string;
+  value: string;
+  change: string;
+  positive?: boolean;
+  points: number[];
 };
 
 const MARKET_NEWS: NewsItem[] = [
@@ -99,11 +107,152 @@ const CRYPTO_NEWS: NewsItem[] = [
   },
 ];
 
+const FALLBACK_TICKERS: MarketTickerItem[] = [
+  {
+    label: "S&P 500",
+    value: "Loading...",
+    change: "Updating...",
+    positive: false,
+    points: [70, 68, 66, 65, 61, 58, 56, 54, 57, 52, 49, 46, 44, 42, 45, 41],
+  },
+  {
+    label: "Dow 30",
+    value: "Loading...",
+    change: "Updating...",
+    positive: false,
+    points: [62, 61, 60, 61, 63, 66, 68, 70, 66, 67, 69, 71, 70, 71, 72, 73],
+  },
+  {
+    label: "Nasdaq",
+    value: "Loading...",
+    change: "Updating...",
+    positive: false,
+    points: [78, 76, 73, 70, 67, 64, 61, 59, 57, 54, 52, 48, 45, 43, 40, 38],
+  },
+  {
+    label: "Gold",
+    value: "Loading...",
+    change: "Updating...",
+    positive: false,
+    points: [66, 65, 63, 64, 61, 58, 60, 57, 54, 55, 52, 49, 46, 48, 44, 42],
+  },
+  {
+    label: "Silver",
+    value: "Loading...",
+    change: "Updating...",
+    positive: true,
+    points: [38, 40, 42, 44, 47, 49, 53, 55, 57, 60, 58, 61, 64, 66, 68, 72],
+  },
+];
+
 function ClockItem({ label, time }: ClockItemProps) {
   return (
     <div style={styles.clockCard}>
       <div style={styles.clockLabel}>{label}</div>
-      <div style={styles.clockTime}>{time}</div>
+      <div style={styles.clockTimeWrap}>
+        <div style={styles.clockTime}>{time}</div>
+      </div>
+    </div>
+  );
+}
+
+function Sparkline({
+  points,
+  color,
+  fillColor,
+  idSeed,
+}: {
+  points: number[];
+  color: string;
+  fillColor: string;
+  idSeed: string;
+}) {
+  const width = 88;
+  const height = 32;
+  const max = Math.max(...points);
+  const min = Math.min(...points);
+  const range = max - min || 1;
+
+  const line = points
+    .map((point, index) => {
+      const x = (index / (points.length - 1)) * width;
+      const y = height - ((point - min) / range) * (height - 6) - 3;
+      return `${x},${y}`;
+    })
+    .join(" ");
+
+  const area = `0,${height} ${line} ${width},${height}`;
+  const gradientId = `gradient-${idSeed
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, "")}-${points.join("-")}`;
+
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      width={88}
+      height={32}
+      aria-hidden="true"
+      style={styles.sparklineSvg}
+    >
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={fillColor} stopOpacity="0.38" />
+          <stop offset="100%" stopColor={fillColor} stopOpacity="0.03" />
+        </linearGradient>
+      </defs>
+
+      <path d={`M ${area}`} fill={`url(#${gradientId})`} stroke="none" />
+
+      <polyline
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        points={line}
+      />
+    </svg>
+  );
+}
+
+function MarketTickerCard({
+  item,
+  isLast,
+}: {
+  item: MarketTickerItem;
+  isLast?: boolean;
+}) {
+  const lineColor = item.positive ? "#22c55e" : "#f87171";
+  const fillColor = item.positive ? "#22c55e" : "#ef4444";
+
+  return (
+    <div
+      style={{
+        ...styles.tickerCard,
+        ...(isLast ? styles.tickerCardLast : {}),
+      }}
+    >
+      <div style={styles.tickerTextBlock}>
+        <div style={styles.tickerLabel}>{item.label}</div>
+        <div style={styles.tickerValue}>{item.value}</div>
+        <div
+          style={{
+            ...styles.tickerChange,
+            color: item.positive ? "#4ade80" : "#f87171",
+          }}
+        >
+          {item.change}
+        </div>
+      </div>
+
+      <div style={styles.tickerChartWrap}>
+        <Sparkline
+          points={item.points}
+          color={lineColor}
+          fillColor={fillColor}
+          idSeed={item.label}
+        />
+      </div>
     </div>
   );
 }
@@ -159,9 +308,12 @@ export default function HomePage() {
   const [accessActive, setAccessActive] = useState(false);
   const [hoveredNav, setHoveredNav] = useState("");
 
-  const [londonTime, setLondonTime] = useState("");
-  const [newYorkTime, setNewYorkTime] = useState("");
-  const [hongKongTime, setHongKongTime] = useState("");
+  const [londonTime, setLondonTime] = useState("--:--:--");
+  const [newYorkTime, setNewYorkTime] = useState("--:--:--");
+  const [hongKongTime, setHongKongTime] = useState("--:--:--");
+
+  const [marketTickers, setMarketTickers] =
+    useState<MarketTickerItem[]>(FALLBACK_TICKERS);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -212,25 +364,27 @@ export default function HomePage() {
         hour12: false,
       };
 
+      const now = new Date();
+
       setLondonTime(
         new Intl.DateTimeFormat("en-GB", {
           ...timeOptions,
           timeZone: "Europe/London",
-        }).format(new Date())
+        }).format(now)
       );
 
       setNewYorkTime(
         new Intl.DateTimeFormat("en-US", {
           ...timeOptions,
           timeZone: "America/New_York",
-        }).format(new Date())
+        }).format(now)
       );
 
       setHongKongTime(
         new Intl.DateTimeFormat("en-HK", {
           ...timeOptions,
           timeZone: "Asia/Hong_Kong",
-        }).format(new Date())
+        }).format(now)
       );
     };
 
@@ -238,6 +392,55 @@ export default function HomePage() {
     const interval = setInterval(updateTimes, 1000);
 
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadMarketTickers = async () => {
+      try {
+        const response = await fetch("/api/market-tickers", {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          throw new Error(`Market API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (!active || !Array.isArray(data)) return;
+
+        const normalized = data
+          .filter((item) => item && typeof item === "object")
+          .map((item) => ({
+            label: String(item.label ?? ""),
+            value: String(item.value ?? "—"),
+            change: String(item.change ?? "—"),
+            positive: Boolean(item.positive),
+            points:
+              Array.isArray(item.points) && item.points.length > 1
+                ? item.points.map((p: unknown) => Number(p) || 0)
+                : [40, 42, 41, 43, 44, 45, 44, 46, 47, 48, 47, 49, 50, 51, 50, 52],
+          }))
+          .filter((item) => item.label);
+
+        if (normalized.length > 0) {
+          setMarketTickers(normalized);
+        }
+      } catch (error) {
+        console.error("MARKET TICKER LOAD ERROR:", error);
+      }
+    };
+
+    loadMarketTickers();
+    const interval = setInterval(loadMarketTickers, 15000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
   }, []);
 
   const getPlanLabel = () => {
@@ -273,7 +476,11 @@ export default function HomePage() {
               }}
               aria-label="Go to homepage"
             >
-              <img src="/logo.png" alt="Fundamental Analysis Platform logo" style={styles.mainLogoImage} />
+              <img
+                src="/logo.png"
+                alt="Fundamental Analysis Platform logo"
+                style={styles.mainLogoImage}
+              />
             </button>
 
             <div style={styles.brandTextBlock}>
@@ -387,10 +594,22 @@ export default function HomePage() {
           </div>
         </header>
 
-        <div style={styles.clocksWrap}>
-          <ClockItem label="London" time={londonTime} />
-          <ClockItem label="New York" time={newYorkTime} />
-          <ClockItem label="Hong Kong" time={hongKongTime} />
+        <div style={styles.topInfoRow}>
+          <div style={styles.clocksWrap}>
+            <ClockItem label="London" time={londonTime} />
+            <ClockItem label="New York" time={newYorkTime} />
+            <ClockItem label="Hong Kong" time={hongKongTime} />
+          </div>
+
+          <div style={styles.marketTickerPanel}>
+            {marketTickers.map((item, index) => (
+              <MarketTickerCard
+                key={`${item.label}-${index}`}
+                item={item}
+                isLast={index === marketTickers.length - 1}
+              />
+            ))}
+          </div>
         </div>
 
         <div style={styles.grid}>
@@ -582,7 +801,7 @@ export default function HomePage() {
               <div style={styles.planMiniCard}>
                 <div style={styles.planMiniTitle}>Basic</div>
                 <div style={styles.planMiniText}>
-                  3 analyses per day, basic access, no Alerts and no RSI Premium.
+                  10 analyses per day, basic access, no Alerts and no RSI Premium.
                 </div>
               </div>
 
@@ -783,33 +1002,115 @@ const styles: Record<string, React.CSSProperties> = {
     transform: "translateY(-1px)",
     boxShadow: "0 0 0 1px rgba(96,165,250,0.14), 0 14px 28px rgba(37,99,235,0.22)",
   },
-  clocksWrap: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, minmax(120px, 170px))",
+  topInfoRow: {
+    display: "flex",
+    alignItems: "stretch",
     gap: "10px",
     marginBottom: "14px",
+    width: "100%",
+    overflowX: "auto",
+    paddingBottom: "2px",
+  },
+  clocksWrap: {
+    display: "flex",
+    gap: "6px",
+    alignItems: "stretch",
+    flexShrink: 0,
   },
   clockCard: {
-    background: "rgba(10, 20, 40, 0.82)",
+    width: "112px",
+    minWidth: "112px",
+    height: "86px",
+    background: "rgba(6, 14, 28, 0.96)",
     border: "1px solid rgba(255,255,255,0.08)",
     borderRadius: "12px",
-    padding: "10px 12px",
+    padding: "8px 8px 10px",
     boxShadow: "0 10px 22px rgba(0,0,0,0.18)",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
   },
   clockLabel: {
     color: "#94a3b8",
-    fontSize: "11px",
-    marginBottom: "4px",
-    fontWeight: 400,
+    fontSize: "10px",
+    fontWeight: 500,
+    textAlign: "left",
+    marginBottom: "6px",
+  },
+  clockTimeWrap: {
+    flex: 1,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   clockTime: {
     color: "white",
-    fontSize: "20px",
-    fontWeight: 400,
-    letterSpacing: "1.4px",
+    fontSize: "18px",
+    fontWeight: 500,
+    letterSpacing: "2px",
+    lineHeight: 1,
+    textAlign: "center",
     fontFamily:
-      "'Courier New', 'Consolas', 'SFMono-Regular', 'Roboto Mono', monospace",
-    textShadow: "0 0 10px rgba(34,211,238,0.22)",
+      "'Roboto Mono', 'SFMono-Regular', 'Consolas', 'Courier New', monospace",
+    fontVariantNumeric: "tabular-nums",
+  },
+  marketTickerPanel: {
+    flex: 1,
+    minWidth: "820px",
+    display: "flex",
+    alignItems: "stretch",
+    gap: "4px",
+    background: "linear-gradient(180deg, rgba(7,18,38,0.94), rgba(8,20,40,0.88))",
+    border: "1px solid rgba(34,211,238,0.18)",
+    borderRadius: "16px",
+    padding: "8px 10px",
+    boxShadow: "0 10px 22px rgba(0,0,0,0.18)",
+  },
+  tickerCard: {
+    flex: 1,
+    minWidth: "150px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "8px",
+    padding: "4px 8px",
+    borderRight: "1px solid rgba(255,255,255,0.06)",
+  },
+  tickerCardLast: {
+    borderRight: "none",
+  },
+  tickerTextBlock: {
+    minWidth: 0,
+  },
+  tickerLabel: {
+    color: "#60a5fa",
+    fontSize: "12px",
+    fontWeight: 800,
+    marginBottom: "4px",
+    whiteSpace: "nowrap",
+  },
+  tickerValue: {
+    color: "white",
+    fontSize: "17px",
+    fontWeight: 800,
+    lineHeight: 1.15,
+    whiteSpace: "nowrap",
+  },
+  tickerChange: {
+    fontSize: "12px",
+    fontWeight: 700,
+    marginTop: "4px",
+    whiteSpace: "nowrap",
+  },
+  tickerChartWrap: {
+    flexShrink: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    opacity: 0.98,
+  },
+  sparklineSvg: {
+    display: "block",
   },
   planBadgeBase: {
     display: "inline-flex",
@@ -1133,4 +1434,3 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
   },
 };
-
