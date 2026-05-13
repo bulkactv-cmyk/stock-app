@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "../lib/supabase/client";
 
 type PlanType = "basic" | "pro" | "unlimited" | "loading" | "guest";
@@ -25,6 +25,42 @@ type MarketTickerItem = {
   positive?: boolean;
   points: number[];
 };
+
+type LiveMarketSymbol = {
+  label: string;
+  symbol: string;
+};
+
+type YahooQuoteResult = {
+  meta?: {
+    regularMarketPrice?: number;
+    previousClose?: number;
+    chartPreviousClose?: number;
+  };
+  timestamp?: number[];
+  indicators?: {
+    quote?: Array<{
+      close?: Array<number | null>;
+    }>;
+  };
+};
+
+type YahooChartResponse = {
+  chart?: {
+    result?: YahooQuoteResult[];
+    error?: unknown;
+  };
+};
+
+const MARKET_REFRESH_MS = 30000;
+
+const LIVE_MARKET_SYMBOLS: LiveMarketSymbol[] = [
+  { label: "S&P 500", symbol: "^GSPC" },
+  { label: "Dow 30", symbol: "^DJI" },
+  { label: "Nasdaq", symbol: "^IXIC" },
+  { label: "Gold", symbol: "GC=F" },
+  { label: "Silver", symbol: "SI=F" },
+];
 
 const MARKET_NEWS: NewsItem[] = [
   {
@@ -145,6 +181,135 @@ const FALLBACK_TICKERS: MarketTickerItem[] = [
   },
 ];
 
+function formatMarketValue(value: number | null | undefined) {
+  if (value === null || value === undefined || Number.isNaN(value)) return "—";
+
+  return value.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function formatMarketChangePercent(value: number | null | undefined) {
+  if (value === null || value === undefined || Number.isNaN(value)) return "—";
+
+  const sign = value >= 0 ? "+" : "";
+  return `${sign}${value.toFixed(2)}%`;
+}
+
+function normalizeSparklinePoints(values: number[]) {
+  const cleanValues = values.filter((value) => Number.isFinite(value));
+
+  if (cleanValues.length >= 2) return cleanValues.slice(-18);
+
+  return [40, 42, 41, 43, 44, 45, 44, 46, 47, 48, 47, 49, 50, 51, 50, 52];
+}
+
+async function fetchYahooTicker(item: LiveMarketSymbol): Promise<MarketTickerItem> {
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(
+    item.symbol
+  )}?range=1d&interval=5m&includePrePost=true&_=${Date.now()}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Yahoo market request failed: ${response.status}`);
+  }
+
+  const data = (await response.json()) as YahooChartResponse;
+  const result = data.chart?.result?.[0];
+
+  if (!result) {
+    throw new Error("Yahoo market response missing result");
+  }
+
+  const closes =
+    result.indicators?.quote?.[0]?.close
+      ?.map((value) => (typeof value === "number" ? value : Number.NaN))
+      .filter((value) => Number.isFinite(value)) ?? [];
+
+  const lastClose =
+    closes.length > 0
+      ? closes[closes.length - 1]
+      : result.meta?.regularMarketPrice ?? null;
+
+  const previousClose =
+    result.meta?.previousClose ?? result.meta?.chartPreviousClose ?? closes[0] ?? null;
+
+  const changePercent =
+    typeof lastClose === "number" &&
+    typeof previousClose === "number" &&
+    previousClose !== 0
+      ? ((lastClose - previousClose) / previousClose) * 100
+      : null;
+
+  return {
+    label: item.label,
+    value: formatMarketValue(lastClose),
+    change: formatMarketChangePercent(changePercent),
+    positive: typeof changePercent === "number" ? changePercent >= 0 : false,
+    points: normalizeSparklinePoints(closes),
+  };
+}
+
+async function fetchInternalMarketTickers(): Promise<MarketTickerItem[]> {
+  const response = await fetch(`/api/market-tickers?_=${Date.now()}`, {
+    method: "GET",
+    cache: "no-store",
+    headers: {
+      "Cache-Control": "no-cache",
+      Pragma: "no-cache",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Market API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  if (!Array.isArray(data)) return [];
+
+  return data
+    .filter((item: unknown): item is Partial<MarketTickerItem> => {
+      return typeof item === "object" && item !== null;
+    })
+    .map((item) => ({
+      label: String(item.label ?? ""),
+      value: String(item.value ?? "—"),
+      change: String(item.change ?? "—"),
+      positive: Boolean(item.positive),
+      points:
+        Array.isArray(item.points) && item.points.length > 1
+          ? item.points.map((point) => Number(point) || 0)
+          : [40, 42, 41, 43, 44, 45, 44, 46, 47, 48, 47, 49, 50, 51, 50, 52],
+    }))
+    .filter((item) => item.label);
+}
+
+async function fetchLiveMarketTickers(): Promise<MarketTickerItem[]> {
+  try {
+    const liveRows = await Promise.all(LIVE_MARKET_SYMBOLS.map(fetchYahooTicker));
+
+    if (liveRows.length > 0) {
+      return liveRows;
+    }
+  } catch (error) {
+    console.error("YAHOO LIVE MARKET ERROR:", error);
+  }
+
+  const internalRows = await fetchInternalMarketTickers();
+
+  if (internalRows.length > 0) {
+    return internalRows;
+  }
+
+  throw new Error("No market ticker data available");
+}
+
 function ClockItem({ label, time }: ClockItemProps) {
   return (
     <div style={styles.clockCard}>
@@ -169,13 +334,14 @@ function Sparkline({
 }) {
   const width = 88;
   const height = 32;
-  const max = Math.max(...points);
-  const min = Math.min(...points);
+  const safePoints = points.length > 1 ? points : [1, 1];
+  const max = Math.max(...safePoints);
+  const min = Math.min(...safePoints);
   const range = max - min || 1;
 
-  const line = points
+  const line = safePoints
     .map((point, index) => {
-      const x = (index / (points.length - 1)) * width;
+      const x = (index / (safePoints.length - 1)) * width;
       const y = height - ((point - min) / range) * (height - 6) - 3;
       return `${x},${y}`;
     })
@@ -184,7 +350,7 @@ function Sparkline({
   const area = `0,${height} ${line} ${width},${height}`;
   const gradientId = `gradient-${idSeed
     .toLowerCase()
-    .replace(/[^a-z0-9-]/g, "")}-${points.join("-")}`;
+    .replace(/[^a-z0-9-]/g, "")}-${safePoints.join("-")}`;
 
   return (
     <svg
@@ -300,7 +466,7 @@ function NewsSection({
 }
 
 export default function HomePage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [email, setEmail] = useState("");
@@ -314,6 +480,8 @@ export default function HomePage() {
 
   const [marketTickers, setMarketTickers] =
     useState<MarketTickerItem[]>(FALLBACK_TICKERS);
+  const [marketLastUpdated, setMarketLastUpdated] = useState("");
+  const [marketRefreshing, setMarketRefreshing] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -396,50 +564,38 @@ export default function HomePage() {
 
   useEffect(() => {
     let active = true;
+    let interval: ReturnType<typeof setInterval> | null = null;
 
     const loadMarketTickers = async () => {
       try {
-        const response = await fetch("/api/market-tickers", {
-          method: "GET",
-          cache: "no-store",
-        });
+        setMarketRefreshing(true);
 
-        if (!response.ok) {
-          throw new Error(`Market API error: ${response.status}`);
-        }
+        const normalized = await fetchLiveMarketTickers();
 
-        const data = await response.json();
-
-        if (!active || !Array.isArray(data)) return;
-
-        const normalized = data
-          .filter((item) => item && typeof item === "object")
-          .map((item) => ({
-            label: String(item.label ?? ""),
-            value: String(item.value ?? "—"),
-            change: String(item.change ?? "—"),
-            positive: Boolean(item.positive),
-            points:
-              Array.isArray(item.points) && item.points.length > 1
-                ? item.points.map((p: unknown) => Number(p) || 0)
-                : [40, 42, 41, 43, 44, 45, 44, 46, 47, 48, 47, 49, 50, 51, 50, 52],
-          }))
-          .filter((item) => item.label);
+        if (!active) return;
 
         if (normalized.length > 0) {
           setMarketTickers(normalized);
+          setMarketLastUpdated(new Date().toLocaleTimeString());
         }
       } catch (error) {
         console.error("MARKET TICKER LOAD ERROR:", error);
+      } finally {
+        if (active) {
+          setMarketRefreshing(false);
+        }
       }
     };
 
     loadMarketTickers();
-    const interval = setInterval(loadMarketTickers, 15000);
+    interval = setInterval(loadMarketTickers, MARKET_REFRESH_MS);
 
     return () => {
       active = false;
-      clearInterval(interval);
+
+      if (interval) {
+        clearInterval(interval);
+      }
     };
   }, []);
 
@@ -602,6 +758,22 @@ export default function HomePage() {
           </div>
 
           <div style={styles.marketTickerPanel}>
+            <div style={styles.liveStatusPill}>
+              <span
+                style={{
+                  ...styles.liveDot,
+                  ...(marketRefreshing ? styles.liveDotRefreshing : {}),
+                }}
+              />
+              <span>
+                {marketRefreshing
+                  ? "Updating"
+                  : marketLastUpdated
+                  ? `Live ${marketLastUpdated}`
+                  : "Live"}
+              </span>
+            </div>
+
             {marketTickers.map((item, index) => (
               <MarketTickerCard
                 key={`${item.label}-${index}`}
@@ -1055,6 +1227,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontVariantNumeric: "tabular-nums",
   },
   marketTickerPanel: {
+    position: "relative",
     flex: 1,
     minWidth: "820px",
     display: "flex",
@@ -1063,8 +1236,35 @@ const styles: Record<string, React.CSSProperties> = {
     background: "linear-gradient(180deg, rgba(7,18,38,0.94), rgba(8,20,40,0.88))",
     border: "1px solid rgba(34,211,238,0.18)",
     borderRadius: "16px",
-    padding: "8px 10px",
+    padding: "8px 10px 8px 76px",
     boxShadow: "0 10px 22px rgba(0,0,0,0.18)",
+  },
+  liveStatusPill: {
+    position: "absolute",
+    left: "10px",
+    top: "10px",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+    background: "rgba(34,197,94,0.10)",
+    color: "#86efac",
+    border: "1px solid rgba(34,197,94,0.22)",
+    borderRadius: "999px",
+    padding: "5px 8px",
+    fontSize: "10px",
+    fontWeight: 900,
+    whiteSpace: "nowrap",
+  },
+  liveDot: {
+    width: "7px",
+    height: "7px",
+    borderRadius: "999px",
+    background: "#22c55e",
+    boxShadow: "0 0 0 4px rgba(34,197,94,0.12)",
+  },
+  liveDotRefreshing: {
+    background: "#facc15",
+    boxShadow: "0 0 0 4px rgba(250,204,21,0.12)",
   },
   tickerCard: {
     flex: 1,
