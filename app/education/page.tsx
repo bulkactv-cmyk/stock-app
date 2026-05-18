@@ -775,7 +775,7 @@ const styles: Record<string, React.CSSProperties> = {
   levelButton: { width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", background: "rgba(37,99,235,0.18)", color: "white", border: "1px solid rgba(96,165,250,0.24)", borderRadius: "12px", padding: "12px", fontSize: "13px", fontWeight: 900, cursor: "pointer", textAlign: "left" },
   lessonsWrap: { display: "flex", flexDirection: "column", gap: "7px" },
   levelSubtitle: { color: "#94a3b8", fontSize: "12px", lineHeight: 1.5, margin: "2px 0 4px" },
-  lessonButton: { width: "100%", background: "rgba(255,255,255,0.035)", color: "white", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "11px", padding: "11px 12px", fontSize: "12px", lineHeight: 1.35, fontWeight: 800, cursor: "pointer", textAlign: "left" },
+  lessonButton: { width: "100%", background: "rgba(255,255,255,0.035)", color: "white", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "16px 16px", fontSize: "16px", lineHeight: 1.4, fontWeight: 600, cursor: "pointer", textAlign: "left" },
   lessonButtonActive: { background: "rgba(37,99,235,0.55)", border: "1px solid rgba(96,165,250,0.45)" },
   examItem: { color: "#dbeafe", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "10px", padding: "10px", fontSize: "12px", fontWeight: 700 },
   contentCard: { background: "rgba(8,18,36,0.96)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "20px", padding: "34px", boxShadow: "0 24px 50px rgba(0,0,0,0.34)" },
