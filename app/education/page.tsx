@@ -1538,43 +1538,206 @@ FCF Yield helps compare stocks with bonds and cash returns.
     title: "32. Economic Moat and Competitive Advantage",
     category: "core",
     content: `
-An economic moat is a durable competitive advantage.
+Economic moat means a company has strong protection against competitors.
 
-Companies with strong moats can protect profits for many years.
+It does not mean economic growth, GDP growth or macroeconomic development.
+It means business defense.
 
-Types of moats:
+The idea is simple:
+If a company earns high profits, competitors will usually try to enter the market.
+If competitors can easily copy the product, reduce prices or take customers, the profit advantage may disappear.
+If competitors cannot easily do that, the company may have an economic moat.
 
-1. Brand
+A strong moat can protect:
+- revenue
+- margins
+- market share
+- customer loyalty
+- pricing power
+- return on invested capital
+- long-term free cash flow
+
+Main types of economic moats:
+
+1. Brand power
+
+A strong brand allows a company to charge premium prices because customers trust it.
+
+Formula connection:
+Pricing Power = Ability to increase price without losing many customers
+
 Example:
-Apple, Coca-Cola, Nike
+If a company sells 10,000,000 products at $100, revenue is:
+
+Revenue = 10,000,000 × $100 = $1,000,000,000
+
+If the company raises price by 10% to $110 and demand stays strong:
+
+New Revenue = 10,000,000 × $110 = $1,100,000,000
+
+Revenue increases by $100,000,000 without selling more units.
+
+Examples:
+Apple, Coca-Cola, Nike, Ferrari.
+
+Why it matters:
+A strong brand often supports higher margins and customer loyalty.
+
 
 2. Network effects
-The product becomes more valuable as more users join.
+
+A network effect exists when a product becomes more valuable as more people use it.
+
 Example:
-Visa, Meta, Microsoft ecosystem
+A payment network with 10,000 merchants is useful.
+A payment network with 100,000,000 merchants and users is much more powerful.
+
+Examples:
+Visa, Mastercard, Meta, Microsoft ecosystem.
+
+Why it matters:
+New competitors struggle because users prefer the network where everyone already is.
+
 
 3. Switching costs
-Customers do not easily leave.
+
+Switching costs exist when customers cannot easily leave a product or service.
+
 Example:
-Enterprise software
+A large company uses enterprise software for accounting, customer data and operations.
+Changing the software may cost millions, require employee training and create operational risk.
+
+Examples:
+Microsoft, Adobe, Salesforce, Oracle.
+
+Why it matters:
+High switching costs create recurring revenue and reduce customer churn.
+
 
 4. Cost advantage
-The company produces cheaper than competitors.
 
-5. Patents and regulation
-Legal protection from competition.
+A company has a cost advantage when it can produce or distribute goods cheaper than competitors.
 
-How to identify a moat:
-- high margins
-- high ROIC
-- stable market share
-- pricing power
-- strong brand loyalty
-- recurring revenue
+Example:
+Company A produces a product for $60 and sells it for $100.
+Gross Profit = $100 - $60 = $40
+Gross Margin = 40 / 100 × 100 = 40%
+
+Company B produces the same product for $80 and sells it for $100.
+Gross Profit = $20
+Gross Margin = 20%
+
+Company A can lower prices and still remain profitable, while Company B may struggle.
+
+Examples:
+Walmart, Costco, large-scale manufacturers.
+
+Why it matters:
+Cost advantages are powerful during recessions and price wars.
+
+
+5. Patents, regulation and licenses
+
+Some companies are protected by patents, licenses or regulatory barriers.
+
+Example:
+A pharmaceutical company may have patent protection on a drug.
+Competitors cannot legally copy it until the patent expires.
+
+Examples:
+Pharma companies, exchanges, regulated utilities, specialized technology companies.
+
+Why it matters:
+Legal protection can create years of high profitability.
+
+
+6. Data and ecosystem advantage
+
+Some companies collect valuable data or build ecosystems that become difficult to replace.
+
+Example:
+A user who owns an iPhone, MacBook, Apple Watch, AirPods and uses iCloud is less likely to leave Apple.
+
+Why it matters:
+The ecosystem increases retention and lifetime customer value.
+
+
+How to identify a real moat:
+
+1. High ROIC
+
+Formula:
+ROIC = NOPAT / Invested Capital × 100
+
+Example:
+NOPAT = $10B
+Invested Capital = $50B
+
+ROIC = 10B / 50B × 100 = 20%
+
+A company that can produce 20% ROIC for many years may have a strong moat.
+
+
+2. Stable or rising margins
+
+Formula:
+Operating Margin = Operating Income / Revenue × 100
+
+Example:
+Revenue = $100B
+Operating Income = $30B
+
+Operating Margin = 30B / 100B × 100 = 30%
+
+If competitors cannot reduce this margin over time, the company may be well protected.
+
+
+3. Pricing power
+
+If inflation rises and the company can increase prices without losing customers, that is a strong sign of moat.
+
+
+4. Market share stability
+
+If a company keeps or grows market share for many years, competitors may not be able to attack it successfully.
+
+
+5. Recurring revenue
+
+Recurring revenue means customers keep paying regularly.
+
+Examples:
+software subscriptions, cloud contracts, payment networks, membership models.
+
+
+Real investor example:
+
+Company A:
+Revenue growth = 8%
+Operating margin = 32%
+ROIC = 25%
+Debt = low
+Customer retention = high
+
+Company B:
+Revenue growth = 20%
+Operating margin = 5%
+ROIC = 4%
+Debt = high
+Customer retention = weak
+
+Many beginners may choose Company B because growth is higher.
+A professional may prefer Company A because it has better economics and stronger protection.
+
 
 Professional lesson:
-Great companies usually have strong moats.
-A moat protects profits from competition.
+A strong economic moat does not guarantee the stock is always a buy.
+Price still matters.
+
+Even a great company can be a bad investment if bought at an extreme valuation.
+
+The correct question is:
+Is this a high-quality company with durable competitive advantages, and is the current valuation reasonable?
 `,
   },
   {
@@ -1657,6 +1820,299 @@ const categories: { key: LessonCategory; label: string; description: string }[] 
     description: "Future section for articles, checklists and reading materials.",
   },
 ];
+
+
+type StructuredLessonSection = {
+  heading: string;
+  body: string;
+};
+
+function normalizeLessonBody(content: string) {
+  return content
+    .trim()
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/[ \t]+\n/g, "\n");
+}
+
+function getWhatItIs(lesson: Lesson) {
+  const title = lesson.title.toLowerCase();
+
+  if (title.includes("economic moat")) {
+    return `Economic moat means business protection. It describes the durable competitive advantage that prevents competitors from easily taking a company's customers, profits, market share or pricing power. The word "moat" comes from the protective water around a castle. In investing, the "castle" is the business and the "moat" is the protection around that business.`;
+  }
+
+  if (title.includes("stock")) {
+    return `A stock is an ownership share in a real company. When an investor buys a stock, the investor owns a small part of that business and participates in its future value creation, risk and potential shareholder returns.`;
+  }
+
+  if (title.includes("technical analysis")) {
+    return `Technical analysis is the study of price, volume, trend and chart behavior. It focuses on what the market is doing now instead of only asking what the business is worth.`;
+  }
+
+  if (title.includes("fundamental analysis")) {
+    return `Fundamental analysis is the process of estimating the real economic value of a company or asset by studying revenue, earnings, margins, cash flow, debt, valuation, competitive position and future growth.`;
+  }
+
+  if (title.includes("inflation")) {
+    return `Inflation is the rate at which prices for goods and services rise over time. It reduces purchasing power because the same amount of money buys fewer goods in the future.`;
+  }
+
+  if (title.includes("deflation")) {
+    return `Deflation is the opposite of inflation. It means prices fall over time, usually because demand is weak, credit is contracting, or the economy is slowing.`;
+  }
+
+  if (title.includes("cryptocurrency")) {
+    return `Cryptocurrency is a digital asset secured by cryptography and usually recorded on a blockchain. It can be used for payments, decentralized applications, digital ownership, settlement, speculation or store-of-value narratives.`;
+  }
+
+  if (title.includes("rsi")) {
+    return `RSI, or Relative Strength Index, is a momentum indicator that measures how strong recent price movement is on a scale from 0 to 100.`;
+  }
+
+  if (title.includes("macd")) {
+    return `MACD is a trend and momentum indicator that compares short-term and medium-term exponential moving averages to show whether momentum is improving or weakening.`;
+  }
+
+  if (title.includes("moving average")) {
+    return `A moving average is a smoothed line based on past prices. It helps investors and traders understand trend direction without reacting to every small price movement.`;
+  }
+
+  if (title.includes("bollinger")) {
+    return `Bollinger Bands are a volatility tool built around a moving average. They show when price is trading near the upper or lower part of its recent volatility range.`;
+  }
+
+  if (title.includes("volume")) {
+    return `Volume shows how much of an asset was traded during a specific period. It helps confirm whether a price move has real participation behind it.`;
+  }
+
+  if (title.includes("support")) {
+    return `Support and resistance are price zones where buyers or sellers have historically reacted. They are not exact lines, but areas where market behavior often changes.`;
+  }
+
+  if (title.includes("candlestick")) {
+    return `Candlesticks are chart candles that show the open, high, low and closing price for a period. They help visualize the battle between buyers and sellers.`;
+  }
+
+  if (title.includes("trend lines")) {
+    return `Market structure describes whether price is forming higher highs and higher lows, lower highs and lower lows, or moving sideways. Trend lines help visualize that structure.`;
+  }
+
+  if (title.includes("risk")) {
+    return `Risk management is the process of protecting capital from large losses. It defines how much to invest, how much to risk and when a trade or investment thesis is invalid.`;
+  }
+
+  if (title.includes("interest rates")) {
+    return `Interest rates are the cost of money. They influence borrowing, lending, valuation, liquidity, consumer spending and institutional capital allocation.`;
+  }
+
+  if (title.includes("recession")) {
+    return `A recession is a broad economic slowdown where growth weakens, unemployment rises, profits decline and credit conditions usually become tighter.`;
+  }
+
+  if (title.includes("liquidity")) {
+    return `Liquidity means how easily money moves through the financial system and how easily assets can be bought or sold without strongly moving the price.`;
+  }
+
+  return `This lesson explains an important investing concept used to analyze companies, markets, valuation, risk or investor behavior. The goal is to understand the concept clearly before using it in real decisions.`;
+}
+
+function getUsedFor(lesson: Lesson) {
+  switch (lesson.category) {
+    case "core":
+      return `It is used to analyze business quality, estimate value, compare companies, decide whether a stock is attractive and avoid buying weak businesses only because the price looks cheap.`;
+    case "macro":
+      return `It is used to understand the economic environment behind market movements. Professional investors use macro data to judge liquidity, interest-rate pressure, earnings risk and risk appetite.`;
+    case "crypto":
+      return `It is used to evaluate digital assets, separate real projects from speculation, understand token risk and avoid buying crypto only because of hype or social media momentum.`;
+    case "technical":
+      return `It is used to time entries and exits, identify trend direction, confirm momentum, define risk levels and avoid buying blindly without understanding market structure.`;
+    case "video":
+      return `This section is prepared for future video lessons where the same concepts can be explained visually with screen recordings, charts and practical examples.`;
+    case "library":
+      return `This section is prepared for future reading materials, checklists, investor notes and downloadable educational resources.`;
+    default:
+      return `It is used as part of a structured investment process.`;
+  }
+}
+
+function getWhyImportant(lesson: Lesson) {
+  const title = lesson.title.toLowerCase();
+
+  if (title.includes("economic moat")) {
+    return `It is important because long-term investment returns often come from companies that can protect high margins and high returns on capital for many years. Without protection, competitors usually enter the market, reduce prices and destroy excess profits.`;
+  }
+
+  if (title.includes("risk")) {
+    return `It is important because even a good analysis can be wrong. Investors who do not control risk can lose too much capital before their long-term strategy has time to work.`;
+  }
+
+  if (title.includes("liquidity") || title.includes("interest rates") || title.includes("inflation")) {
+    return `It is important because liquidity and rates influence almost every asset class: stocks, bonds, crypto, real estate, commodities and currencies. A strong company can still fall when macro conditions tighten.`;
+  }
+
+  if (lesson.category === "technical") {
+    return `It is important because price does not always move immediately after good or bad news. Technical tools help investors see whether the market is confirming or rejecting a thesis.`;
+  }
+
+  if (lesson.category === "crypto") {
+    return `It is important because crypto markets are highly volatile and often speculative. A structured checklist reduces the risk of buying weak projects, illiquid tokens or unsustainable narratives.`;
+  }
+
+  return `It is important because professional investors do not make decisions from one number. They combine business quality, growth, valuation, balance sheet strength, market conditions and risk management.`;
+}
+
+function getHowItWorks(lesson: Lesson) {
+  return normalizeLessonBody(lesson.content);
+}
+
+function getRealExample(lesson: Lesson) {
+  const title = lesson.title.toLowerCase();
+
+  if (title.includes("economic moat")) {
+    return `Example: Apple can sell premium devices because customers trust the brand and stay inside the ecosystem. If a competitor offers a cheaper phone, many Apple users still remain because they use iCloud, App Store, Apple Watch, MacBook and other connected services. That loyalty protects revenue and margins.`;
+  }
+
+  if (title.includes("revenue") || title.includes("eps") || title.includes("p/e")) {
+    return `Example: If a company has EPS of $5 and trades at $100, the P/E ratio is 100 / 5 = 20. If EPS grows to $6 and the P/E stays 20, the implied price becomes 6 × 20 = $120. That is a 20% price increase driven by earnings growth.`;
+  }
+
+  if (title.includes("margins")) {
+    return `Example: If revenue is $100M and net income is $18M, net margin is 18M / 100M × 100 = 18%. If next year revenue rises to $120M but net income stays $18M, net margin falls to 15%. Revenue grew, but profitability weakened.`;
+  }
+
+  if (title.includes("rsi")) {
+    return `Example: If a stock rises quickly and RSI reaches 78, it may be extended. But if the stock is in a strong uptrend, RSI can remain elevated for weeks. A professional does not sell only because RSI is above 70; they also check trend, volume and support.`;
+  }
+
+  if (title.includes("support")) {
+    return `Example: If Bitcoin bounces several times near $90,000, that area becomes support. If price later breaks below $90,000 with high volume, the old support may become resistance.`;
+  }
+
+  if (title.includes("inflation")) {
+    return `Example: If a basket of goods costs $1,000 this year and $1,080 next year, inflation is (1,080 - 1,000) / 1,000 × 100 = 8%. If wages grow only 4%, real purchasing power falls.`;
+  }
+
+  if (title.includes("crypto")) {
+    return `Example: A token trades at $2 with 500M circulating supply. Market cap = 2 × 500M = $1B. If another 500M tokens unlock next year, investors must understand whether demand can absorb the new supply.`;
+  }
+
+  return `Example: A professional investor compares two companies in the same sector. Company A has higher growth but weak cash flow. Company B grows slower but has strong margins, low debt and high return on capital. The better investment depends on quality, price and risk, not only growth.`;
+}
+
+function getInstitutionalUse(lesson: Lesson) {
+  const title = lesson.title.toLowerCase();
+
+  if (title.includes("economic moat")) {
+    return `Institutional investors use moat analysis to identify companies that can defend profits across economic cycles. They look for persistent high ROIC, stable or rising margins, pricing power, market share stability, recurring revenue and customer loyalty.`;
+  }
+
+  if (lesson.category === "technical") {
+    return `Institutions often use this together with liquidity, order flow, volatility, volume and higher-timeframe trend. They rarely rely on one indicator alone; they use it as confirmation inside a broader risk framework.`;
+  }
+
+  if (lesson.category === "macro") {
+    return `Institutions use this to adjust portfolio exposure. In tight monetary conditions they may reduce speculative assets; in improving liquidity conditions they may increase exposure to equities, credit or crypto.`;
+  }
+
+  if (lesson.category === "crypto") {
+    return `Institutions focus on liquidity, custody, regulation, token supply, exchange listings, unlock schedules, security, adoption and whether the asset has a real reason to exist beyond speculation.`;
+  }
+
+  return `Institutions use this inside a repeatable research process. They compare historical data, sector peers, analyst expectations, valuation ranges, management guidance and macro risk before allocating capital.`;
+}
+
+function getBeginnerMistakes(lesson: Lesson) {
+  const title = lesson.title.toLowerCase();
+
+  if (title.includes("economic moat")) {
+    return `Beginners often confuse popularity with a real moat. A company can be popular today but still have weak protection. A real moat must show up in the numbers through margins, return on capital, customer retention, pricing power or durable market share.`;
+  }
+
+  if (title.includes("p/e")) {
+    return `Beginners often think low P/E automatically means cheap and high P/E automatically means expensive. This is wrong. Valuation must be judged against growth, margins, debt, cash flow and business quality.`;
+  }
+
+  if (lesson.category === "technical") {
+    return `Beginners often use indicators as buy or sell signals without context. An indicator is not a prediction machine. It must be combined with trend, volume, support/resistance and risk control.`;
+  }
+
+  if (lesson.category === "macro") {
+    return `Beginners often ignore macro conditions and analyze assets in isolation. In reality, interest rates, liquidity and inflation can change valuations even when the company itself remains strong.`;
+  }
+
+  if (lesson.category === "crypto") {
+    return `Beginners often buy because of hype, influencer posts or a fast-rising price. They forget to check supply, unlocks, liquidity, security, real usage and whether insiders may be selling into public demand.`;
+  }
+
+  return `Beginners often focus on one attractive number and ignore the full picture. Professional analysis requires context: business model, financial quality, valuation, market cycle and risk.`;
+}
+
+function buildStructuredLesson(lesson: Lesson): StructuredLessonSection[] {
+  return [
+    {
+      heading: "What it is",
+      body: getWhatItIs(lesson),
+    },
+    {
+      heading: "What it is used for",
+      body: getUsedFor(lesson),
+    },
+    {
+      heading: "Why it matters",
+      body: getWhyImportant(lesson),
+    },
+    {
+      heading: "How it works / how it is calculated",
+      body: getHowItWorks(lesson),
+    },
+    {
+      heading: "Real example",
+      body: getRealExample(lesson),
+    },
+    {
+      heading: "How institutions use it",
+      body: getInstitutionalUse(lesson),
+    },
+    {
+      heading: "What beginners usually get wrong",
+      body: getBeginnerMistakes(lesson),
+    },
+  ];
+}
+
+function LessonContent({ sections }: { sections: StructuredLessonSection[] }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+      {sections.map((section) => (
+        <section key={section.heading}>
+          <h2
+            style={{
+              color: "white",
+              fontSize: "22px",
+              lineHeight: 1.25,
+              margin: "0 0 8px",
+              fontWeight: 900,
+            }}
+          >
+            {section.heading}
+          </h2>
+
+          <div
+            style={{
+              color: "#dbeafe",
+              fontSize: "17px",
+              lineHeight: 1.48,
+              whiteSpace: "pre-line",
+            }}
+          >
+            {section.body}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+
 
 function ChartVisual({ type }: { type: VisualType }) {
   const titleMap: Record<VisualType, string> = {
@@ -1972,6 +2428,8 @@ export default function EducationPage() {
   const [selectedLesson, setSelectedLesson] = useState<Lesson>(lessons[0]);
   const [openCategory, setOpenCategory] = useState<LessonCategory>("core");
 
+  const structuredLesson = useMemo(() => buildStructuredLesson(selectedLesson), [selectedLesson]);
+
   useEffect(() => {
     const loadUser = async () => {
       const {
@@ -2200,16 +2658,7 @@ export default function EducationPage() {
 
             {selectedLesson.visual ? <ChartVisual type={selectedLesson.visual} /> : null}
 
-            <div
-              style={{
-                color: "#dbeafe",
-                fontSize: "18px",
-                lineHeight: 1.9,
-                whiteSpace: "pre-line",
-              }}
-            >
-              {selectedLesson.content}
-            </div>
+            <LessonContent sections={structuredLesson} />
           </section>
         </div>
       </div>
