@@ -300,6 +300,38 @@ export default function EducationPage() {
       >
         <div
           style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "20px",
+          }}
+        >
+          <button
+            onClick={() => {
+              window.location.href =
+                "https://www.aiproanalysis.com";
+            }}
+            style={{
+              background:
+                "rgba(37,99,235,0.22)",
+              color: "white",
+              border:
+                "1px solid rgba(96,165,250,0.35)",
+              borderRadius: "12px",
+              padding: "12px 18px",
+              fontSize: "14px",
+              fontWeight: 800,
+              cursor: "pointer",
+              boxShadow:
+                "0 10px 20px rgba(0,0,0,0.25)",
+            }}
+          >
+            ← Home
+          </button>
+        </div>
+
+        <div
+          style={{
             display: "grid",
             gridTemplateColumns: "340px 1fr",
             gap: "20px",

@@ -26,41 +26,7 @@ type MarketTickerItem = {
   points: number[];
 };
 
-type LiveMarketSymbol = {
-  label: string;
-  symbol: string;
-};
-
-type YahooQuoteResult = {
-  meta?: {
-    regularMarketPrice?: number;
-    previousClose?: number;
-    chartPreviousClose?: number;
-  };
-  timestamp?: number[];
-  indicators?: {
-    quote?: Array<{
-      close?: Array<number | null>;
-    }>;
-  };
-};
-
-type YahooChartResponse = {
-  chart?: {
-    result?: YahooQuoteResult[];
-    error?: unknown;
-  };
-};
-
 const MARKET_REFRESH_MS = 30000;
-
-const LIVE_MARKET_SYMBOLS: LiveMarketSymbol[] = [
-  { label: "S&P 500", symbol: "^GSPC" },
-  { label: "Dow 30", symbol: "^DJI" },
-  { label: "Nasdaq", symbol: "^IXIC" },
-  { label: "Gold", symbol: "GC=F" },
-  { label: "Silver", symbol: "SI=F" },
-];
 
 const MARKET_NEWS: NewsItem[] = [
   {
@@ -181,80 +147,6 @@ const FALLBACK_TICKERS: MarketTickerItem[] = [
   },
 ];
 
-function formatMarketValue(value: number | null | undefined) {
-  if (value === null || value === undefined || Number.isNaN(value)) return "—";
-
-  return value.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-}
-
-function formatMarketChangePercent(value: number | null | undefined) {
-  if (value === null || value === undefined || Number.isNaN(value)) return "—";
-
-  const sign = value >= 0 ? "+" : "";
-  return `${sign}${value.toFixed(2)}%`;
-}
-
-function normalizeSparklinePoints(values: number[]) {
-  const cleanValues = values.filter((value) => Number.isFinite(value));
-
-  if (cleanValues.length >= 2) return cleanValues.slice(-18);
-
-  return [40, 42, 41, 43, 44, 45, 44, 46, 47, 48, 47, 49, 50, 51, 50, 52];
-}
-
-async function fetchYahooTicker(item: LiveMarketSymbol): Promise<MarketTickerItem> {
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(
-    item.symbol
-  )}?range=1d&interval=5m&includePrePost=true&_=${Date.now()}`;
-
-  const response = await fetch(url, {
-    method: "GET",
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    throw new Error(`Yahoo market request failed: ${response.status}`);
-  }
-
-  const data = (await response.json()) as YahooChartResponse;
-  const result = data.chart?.result?.[0];
-
-  if (!result) {
-    throw new Error("Yahoo market response missing result");
-  }
-
-  const closes =
-    result.indicators?.quote?.[0]?.close
-      ?.map((value) => (typeof value === "number" ? value : Number.NaN))
-      .filter((value) => Number.isFinite(value)) ?? [];
-
-  const lastClose =
-    closes.length > 0
-      ? closes[closes.length - 1]
-      : result.meta?.regularMarketPrice ?? null;
-
-  const previousClose =
-    result.meta?.previousClose ?? result.meta?.chartPreviousClose ?? closes[0] ?? null;
-
-  const changePercent =
-    typeof lastClose === "number" &&
-    typeof previousClose === "number" &&
-    previousClose !== 0
-      ? ((lastClose - previousClose) / previousClose) * 100
-      : null;
-
-  return {
-    label: item.label,
-    value: formatMarketValue(lastClose),
-    change: formatMarketChangePercent(changePercent),
-    positive: typeof changePercent === "number" ? changePercent >= 0 : false,
-    points: normalizeSparklinePoints(closes),
-  };
-}
-
 async function fetchInternalMarketTickers(): Promise<MarketTickerItem[]> {
   const response = await fetch(`/api/market-tickers?_=${Date.now()}`, {
     method: "GET",
@@ -291,23 +183,13 @@ async function fetchInternalMarketTickers(): Promise<MarketTickerItem[]> {
 }
 
 async function fetchLiveMarketTickers(): Promise<MarketTickerItem[]> {
-  try {
-    const liveRows = await Promise.all(LIVE_MARKET_SYMBOLS.map(fetchYahooTicker));
-
-    if (liveRows.length > 0) {
-      return liveRows;
-    }
-  } catch (error) {
-    console.error("YAHOO LIVE MARKET ERROR:", error);
-  }
-
   const internalRows = await fetchInternalMarketTickers();
 
   if (internalRows.length > 0) {
     return internalRows;
   }
 
-  throw new Error("No market ticker data available");
+  return FALLBACK_TICKERS;
 }
 
 function ClockItem({ label, time }: ClockItemProps) {
@@ -482,6 +364,8 @@ export default function HomePage() {
     useState<MarketTickerItem[]>(FALLBACK_TICKERS);
   const [marketLastUpdated, setMarketLastUpdated] = useState("");
   const [marketRefreshing, setMarketRefreshing] = useState(false);
+
+  const isEducationUnlocked = plan === "pro" || plan === "unlimited";
 
   useEffect(() => {
     const loadUser = async () => {
@@ -689,15 +573,20 @@ export default function HomePage() {
               </button>
 
               <button
-                style={getNavButtonStyle("education")}
+                style={{
+                  ...getNavButtonStyle("education"),
+                  opacity: isEducationUnlocked ? 1 : 0.85,
+                }}
                 onMouseEnter={() => setHoveredNav("education")}
                 onMouseLeave={() => setHoveredNav("")}
                 onClick={() => {
-                  document.getElementById("education")?.scrollIntoView({
-                    behavior: "smooth",
-                    block: "start",
-                  });
+                  window.location.href = "https://www.aiproanalysis.com/education";
                 }}
+                title={
+                  isEducationUnlocked
+                    ? "Open Education Academy"
+                    : "Education Academy is available for Pro and Unlimited users"
+                }
               >
                 Education
               </button>
@@ -843,59 +732,63 @@ export default function HomePage() {
             <section id="education" style={styles.sectionCard}>
               <div style={styles.sectionHeader}>
                 <div>
-                  <h2 style={styles.sectionTitle}>Education</h2>
+                  <h2 style={styles.sectionTitle}>Education Academy</h2>
                   <p style={styles.sectionSubtitle}>
-                    Core concepts for investors who want to analyze markets more professionally.
+                    A structured premium learning area for investors who want to understand markets,
+                    company analysis and trading terminology step by step.
                   </p>
                 </div>
               </div>
 
-              <div style={styles.featuresGrid}>
-                <div style={styles.featureCard}>
-                  <div style={styles.featureTitle}>Fundamental Analysis</div>
-                  <div style={styles.featureText}>
-                    Understand revenue, EPS, margins, debt, market cap, cash flow and
-                    valuation before making investment decisions.
-                  </div>
+              <div style={styles.educationOverviewGrid}>
+                <div style={styles.educationHighlightCard}>
+                  <div style={styles.educationBadge}>Premium Learning</div>
+                  <h3 style={styles.educationMainTitle}>
+                    Learn how professional investors analyze stocks
+                  </h3>
+                  <p style={styles.educationMainText}>
+                    The academy starts from the basics and moves toward institutional-style
+                    fundamental analysis: stocks, price drivers, revenue, EPS, margins,
+                    cash flow, valuation, ROE, ROIC, dividends, buybacks and growth vs value.
+                  </p>
+
+                  <button
+                    style={styles.educationButton}
+                    onClick={() => {
+                      window.location.href = "https://www.aiproanalysis.com/education";
+                    }}
+                  >
+                    Open Education Academy →
+                  </button>
                 </div>
 
-                <div style={styles.featureCard}>
-                  <div style={styles.featureTitle}>Crypto Analysis</div>
-                  <div style={styles.featureText}>
-                    Analyze leading crypto assets through market cap, liquidity,
-                    volatility, network activity and market structure.
+                <div style={styles.educationMiniGrid}>
+                  <div style={styles.educationMiniCard}>
+                    <div style={styles.educationMiniTitle}>Market Basics</div>
+                    <div style={styles.educationMiniText}>
+                      Stocks, price movement, market sentiment and economic impact.
+                    </div>
                   </div>
-                </div>
 
-                <div style={styles.featureCard}>
-                  <div style={styles.featureTitle}>AI Insights</div>
-                  <div style={styles.featureText}>
-                    Use structured summaries, bull cases, bear cases and fair value
-                    views to understand an asset faster.
+                  <div style={styles.educationMiniCard}>
+                    <div style={styles.educationMiniTitle}>Key Metrics</div>
+                    <div style={styles.educationMiniText}>
+                      Revenue, EPS, P/E, P/S, PEG, EBITDA, FCF and margins.
+                    </div>
                   </div>
-                </div>
 
-                <div style={styles.featureCard}>
-                  <div style={styles.featureTitle}>Alerts</div>
-                  <div style={styles.featureText}>
-                    Create price alerts for stocks and crypto so important levels are
-                    easier to monitor.
+                  <div style={styles.educationMiniCard}>
+                    <div style={styles.educationMiniTitle}>Company Quality</div>
+                    <div style={styles.educationMiniText}>
+                      Debt, cash flow, balance sheet, ROE, ROIC and management efficiency.
+                    </div>
                   </div>
-                </div>
 
-                <div style={styles.featureCard}>
-                  <div style={styles.featureTitle}>Watchlist</div>
-                  <div style={styles.featureText}>
-                    Save assets and open their analysis with one click instead of
-                    searching for tickers every time.
-                  </div>
-                </div>
-
-                <div style={styles.featureCard}>
-                  <div style={styles.featureTitle}>Premium RSI Stats</div>
-                  <div style={styles.featureText}>
-                    Use RSI heatmaps and tables across multiple timeframes to monitor
-                    momentum and market extremes.
+                  <div style={styles.educationMiniCard}>
+                    <div style={styles.educationMiniTitle}>Valuation Process</div>
+                    <div style={styles.educationMiniText}>
+                      Step-by-step fundamental analysis and intrinsic value thinking.
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1012,6 +905,15 @@ export default function HomePage() {
                   }}
                 >
                   RSI Stats
+                </button>
+
+                <button
+                  style={styles.quickButton}
+                  onClick={() => {
+                    window.location.href = "/education";
+                  }}
+                >
+                  Education
                 </button>
 
                 <button
@@ -1506,27 +1408,74 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "13px",
     fontWeight: 800,
   },
-  featuresGrid: {
+  educationOverviewGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+    gridTemplateColumns: "1.1fr 1.4fr",
+    gap: "14px",
+  },
+  educationHighlightCard: {
+    background:
+      "linear-gradient(135deg, rgba(37,99,235,0.20), rgba(14,165,233,0.06))",
+    border: "1px solid rgba(96,165,250,0.22)",
+    borderRadius: "16px",
+    padding: "20px",
+  },
+  educationBadge: {
+    display: "inline-block",
+    background: "rgba(34,197,94,0.14)",
+    color: "#86efac",
+    border: "1px solid rgba(34,197,94,0.25)",
+    borderRadius: "999px",
+    padding: "5px 10px",
+    fontSize: "11px",
+    fontWeight: 900,
+    marginBottom: "12px",
+  },
+  educationMainTitle: {
+    color: "white",
+    fontSize: "21px",
+    fontWeight: 900,
+    lineHeight: 1.3,
+    margin: "0 0 10px",
+  },
+  educationMainText: {
+    color: "#cbd5e1",
+    fontSize: "14px",
+    lineHeight: 1.75,
+    margin: "0 0 16px",
+  },
+  educationButton: {
+    background: "#2563eb",
+    color: "white",
+    border: "none",
+    borderRadius: "12px",
+    padding: "12px 16px",
+    fontSize: "14px",
+    fontWeight: 800,
+    cursor: "pointer",
+    boxShadow: "0 12px 24px rgba(37,99,235,0.22)",
+  },
+  educationMiniGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
     gap: "12px",
   },
-  featureCard: {
-    background: "rgba(255,255,255,0.02)",
+  educationMiniCard: {
+    background: "rgba(255,255,255,0.025)",
     border: "1px solid rgba(255,255,255,0.08)",
     borderRadius: "14px",
     padding: "16px",
   },
-  featureTitle: {
+  educationMiniTitle: {
     color: "white",
-    fontSize: "16px",
-    fontWeight: 800,
+    fontSize: "15px",
+    fontWeight: 900,
     marginBottom: "8px",
   },
-  featureText: {
+  educationMiniText: {
     color: "#cbd5e1",
-    fontSize: "14px",
-    lineHeight: 1.7,
+    fontSize: "13px",
+    lineHeight: 1.65,
   },
   audienceGrid: {
     display: "grid",
