@@ -466,53 +466,157 @@ function buildLessonSections(lesson: Lesson) {
 }
 
 function visualType(title: string) {
-  if (has(title, ["Inflation", "CPI", "Deflation"])) return "inflation";
+  if (has(title, ["Inflation", "CPI", "Deflation", "Purchasing Power"])) return "inflation";
+  if (has(title, ["Compound Interest", "Capital Accumulation"])) return "compound";
+  if (has(title, ["Money", "Banking", "Central Banks", "Debt", "Credit", "Interest Rates"])) return "money";
+  if (has(title, ["Revenue", "EPS", "P/E", "P/S", "PEG", "EBITDA", "Free Cash Flow", "FCF", "Margin", "ROE", "ROIC", "ROA", "Market Cap", "Enterprise Value", "DCF", "Intrinsic Value", "Dividend", "Buybacks", "Dilution", "Valuation", "Financial Statement", "Income Statement", "Balance Sheet", "Cash Flow Statement"])) return "metrics";
   if (has(title, ["RSI"])) return "rsi";
   if (has(title, ["MACD"])) return "macd";
   if (has(title, ["Moving Averages"])) return "moving";
-  if (has(title, ["Support", "Resistance", "Breakout"])) return "support";
-  if (has(title, ["Bitcoin", "Ethereum", "Crypto", "Token", "DeFi", "Blockchain"])) return "crypto";
-  return "valuation";
+  if (has(title, ["Support", "Resistance", "Breakout", "Trend", "Volume", "Candlestick", "VWAP", "ATR", "Fibonacci", "Divergence", "Liquidity", "Order Flow", "Wyckoff", "Elliott", "Chart"])) return "technical";
+  if (has(title, ["Bitcoin", "Ethereum", "Crypto", "Token", "DeFi", "Blockchain", "Mining", "Wallets", "Smart Contracts", "Layer", "Staking", "Stablecoins", "On-Chain", "Halving", "Altcoin", "NFT", "Meme", "Exchange", "Rug Pulls"])) return "crypto";
+  if (has(title, ["GDP", "Federal Reserve", "ECB", "Bond", "Yield Curve", "Quantitative Easing", "Dollar", "Oil", "Commodities", "Recession", "Credit Crises", "Banking Crises", "Labor", "Consumer", "Macro", "Geopolitics"])) return "macro";
+  if (has(title, ["Portfolio", "Diversification", "Correlation", "Asset Allocation", "Rebalancing", "Risk Parity", "Hedging", "Stress Testing"])) return "portfolio";
+  if (has(title, ["Trading", "Scalping", "Swing", "Day Trading", "Options", "Futures", "Greeks", "Leverage", "Margin", "Stop Loss", "Position Sizing", "Backtesting", "Expectancy"])) return "trading";
+  if (has(title, ["Psychology", "Fear", "Greed", "FOMO", "Panic", "Overtrading", "Bias", "Discipline", "Patience"])) return "psychology";
+  return "framework";
 }
 
-function PracticalVisual({ type }: { type: string }) {
+function getVisualTitle(title: string) {
+  return `Visual model: ${title}`;
+}
+
+function getVisualNodes(title: string) {
+  if (has(title, ["Revenue"])) return ["Units Sold", "Price", "Revenue", "Growth"];
+  if (has(title, ["EPS"])) return ["Net Income", "Shares", "EPS", "Quality"];
+  if (has(title, ["P/E"])) return ["Price", "EPS", "P/E Ratio", "Expectations"];
+  if (has(title, ["P/S"])) return ["Market Cap", "Sales", "P/S Ratio", "Margins"];
+  if (has(title, ["PEG"])) return ["P/E", "Growth", "PEG", "Fairness"];
+  if (has(title, ["EBITDA"])) return ["Operating Income", "D&A", "EBITDA", "Operations"];
+  if (has(title, ["Free Cash Flow", "FCF"])) return ["Cash From Operations", "Capex", "FCF", "Owner Cash"];
+  if (has(title, ["ROE"])) return ["Net Income", "Equity", "ROE", "Efficiency"];
+  if (has(title, ["ROIC"])) return ["NOPAT", "Invested Capital", "ROIC", "Value Creation"];
+  if (has(title, ["ROA"])) return ["Net Income", "Assets", "ROA", "Asset Use"];
+  if (has(title, ["Debt"])) return ["Debt", "Cash", "Net Debt", "Risk"];
+  if (has(title, ["Dividend"])) return ["Cash Flow", "Dividend", "Yield", "Payout"];
+  if (has(title, ["Buybacks", "Dilution"])) return ["Share Count", "Buyback", "Dilution", "Per-Share Value"];
+  if (has(title, ["Inflation", "CPI"])) return ["Money Supply", "Prices", "Purchasing Power", "Rates"];
+  if (has(title, ["Deflation"])) return ["Falling Demand", "Lower Prices", "Debt Burden", "Slowdown"];
+  if (has(title, ["GDP"])) return ["Consumption", "Investment", "Government", "Net Exports"];
+  if (has(title, ["Bitcoin"])) return ["Scarcity", "Network", "Hashrate", "Halving"];
+  if (has(title, ["Ethereum"])) return ["Smart Contracts", "Gas Fees", "Apps", "Network Value"];
+  if (has(title, ["Tokenomics"])) return ["Supply", "Unlocks", "Utility", "FDV"];
+  if (has(title, ["Portfolio"])) return ["Assets", "Weights", "Risk", "Return"];
+  if (has(title, ["Risk"])) return ["Capital", "Position Size", "Stop", "Loss Control"];
+  return ["Concept", "Data", "Analysis", "Decision"];
+}
+
+function PracticalVisual({ type, title }: { type: string; title: string }) {
+  const nodes = getVisualNodes(title);
+
   return (
     <div style={styles.visualCard}>
-      <div style={styles.visualLabel}>Practical Visual Example</div>
-      <svg viewBox="0 0 760 280" width="100%" height="280" role="img">
-        <rect x="0" y="0" width="760" height="280" rx="18" fill="rgba(8,20,40,0.96)" />
-        {[45, 90, 135, 180, 225].map((y) => <line key={y} x1="45" y1={y} x2="720" y2={y} stroke="rgba(255,255,255,0.08)" />)}
+      <div style={styles.visualLabel}>{getVisualTitle(title)}</div>
+      <svg viewBox="0 0 760 300" width="100%" height="300" role="img" aria-label={getVisualTitle(title)}>
+        <rect x="0" y="0" width="760" height="300" rx="18" fill="rgba(8,20,40,0.96)" />
+        {[50, 100, 150, 200, 250].map((y) => <line key={y} x1="45" y1={y} x2="720" y2={y} stroke="rgba(255,255,255,0.08)" />)}
+
         {type === "inflation" ? (
           <>
-            {[["Year 1",120,170,60,"$100"],["Year 2",270,135,95,"$110"],["Year 3",420,95,135,"$125"],["Year 4",570,65,165,"$140"]].map(([label,x,y,h,price]) => (
-              <g key={String(label)}><rect x={Number(x)} y={Number(y)} width="90" height={Number(h)} rx="10" fill="#3b82f6" opacity="0.72" /><text x={Number(x)+45} y={Number(y)-10} textAnchor="middle" fill="white" fontSize="15" fontWeight="800">{price}</text><text x={Number(x)+45} y="255" textAnchor="middle" fill="#dbeafe" fontSize="14">{label}</text></g>
+            {[["Year 1",120,185,55,"$100"],["Year 2",270,150,90,"$112"],["Year 3",420,110,130,"$128"],["Year 4",570,70,170,"$145"]].map(([label,x,y,h,price]) => (
+              <g key={String(label)}><rect x={Number(x)} y={Number(y)} width="92" height={Number(h)} rx="10" fill="#3b82f6" opacity="0.72" /><text x={Number(x)+46} y={Number(y)-10} textAnchor="middle" fill="white" fontSize="15" fontWeight="800">{price}</text><text x={Number(x)+46} y="270" textAnchor="middle" fill="#dbeafe" fontSize="14">{label}</text></g>
             ))}
+            <text x="70" y="34" fill="#93c5fd" fontSize="16" fontWeight="900">Price level rises while purchasing power falls</text>
+          </>
+        ) : type === "compound" ? (
+          <>
+            <polyline fill="none" stroke="#22c55e" strokeWidth="5" strokeLinecap="round" points="70,235 150,220 230,198 310,170 390,132 470,95 550,58 660,35" />
+            <text x="70" y="40" fill="#86efac" fontSize="16" fontWeight="900">Compounding curve: returns earn returns</text>
+            <text x="80" y="258" fill="#dbeafe" fontSize="13">$10k</text><text x="610" y="58" fill="#dbeafe" fontSize="13">$46.6k</text>
+          </>
+        ) : type === "money" ? (
+          <>
+            {[["Saver",100,120],["Bank",285,120],["Borrower",470,120],["Economy",630,120]].map(([label,x,y]) => (
+              <g key={String(label)}><rect x={Number(x)-62} y={Number(y)-42} width="124" height="84" rx="16" fill="rgba(37,99,235,0.22)" stroke="#60a5fa" /><text x={Number(x)} y={Number(y)+5} textAnchor="middle" fill="white" fontSize="15" fontWeight="900">{label}</text></g>
+            ))}
+            <path d="M165 120 H220" stroke="#22c55e" strokeWidth="5" markerEnd="url(#arrow)" /><path d="M350 120 H405" stroke="#22c55e" strokeWidth="5" markerEnd="url(#arrow)" /><path d="M535 120 H575" stroke="#22c55e" strokeWidth="5" markerEnd="url(#arrow)" />
+            <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#22c55e" /></marker></defs>
+            <text x="70" y="230" fill="#dbeafe" fontSize="15" fontWeight="800">Capital moves through savings, credit, lending and investment.</text>
           </>
         ) : type === "rsi" ? (
           <>
-            <rect x="70" y="50" width="620" height="52" fill="rgba(239,68,68,0.22)" /><rect x="70" y="102" width="620" height="105" fill="rgba(148,163,184,0.10)" /><rect x="70" y="207" width="620" height="42" fill="rgba(34,197,94,0.18)" />
-            <text x="85" y="82" fill="#fecaca" fontSize="15" fontWeight="800">RSI above 70: strong momentum / overheating risk</text><text x="85" y="155" fill="#dbeafe" fontSize="15" fontWeight="800">RSI 30–70: normal zone</text><text x="85" y="235" fill="#86efac" fontSize="15" fontWeight="800">RSI below 30: oversold zone</text>
-            <polyline fill="none" stroke="#38bdf8" strokeWidth="4" strokeLinecap="round" points="80,190 140,172 205,130 265,82 330,118 390,147 455,108 515,76 580,124 650,156 700,134" />
+            <rect x="70" y="55" width="620" height="52" fill="rgba(239,68,68,0.22)" /><rect x="70" y="107" width="620" height="105" fill="rgba(148,163,184,0.10)" /><rect x="70" y="212" width="620" height="42" fill="rgba(34,197,94,0.18)" />
+            <text x="85" y="87" fill="#fecaca" fontSize="15" fontWeight="800">RSI above 70: strong momentum / overheating risk</text><text x="85" y="160" fill="#dbeafe" fontSize="15" fontWeight="800">RSI 30–70: normal zone</text><text x="85" y="240" fill="#86efac" fontSize="15" fontWeight="800">RSI below 30: oversold zone</text>
+            <polyline fill="none" stroke="#38bdf8" strokeWidth="4" strokeLinecap="round" points="80,195 140,177 205,135 265,87 330,123 390,152 455,113 515,81 580,129 650,161 700,139" />
           </>
         ) : type === "macd" ? (
           <>
-            <line x1="70" y1="145" x2="700" y2="145" stroke="rgba(255,255,255,0.22)" /><polyline fill="none" stroke="#38bdf8" strokeWidth="4" points="80,160 145,150 210,130 275,108 340,120 405,150 470,170 535,150 600,115 665,100 710,120" /><polyline fill="none" stroke="#facc15" strokeWidth="4" points="80,170 145,160 210,145 275,125 340,130 405,145 470,160 535,158 600,135 665,118 710,125" />
-            <text x="80" y="45" fill="#38bdf8" fontSize="15" fontWeight="800">MACD Line</text><text x="190" y="45" fill="#facc15" fontSize="15" fontWeight="800">Signal Line</text>
+            <line x1="70" y1="150" x2="700" y2="150" stroke="rgba(255,255,255,0.22)" /><polyline fill="none" stroke="#38bdf8" strokeWidth="4" points="80,165 145,155 210,135 275,113 340,125 405,155 470,175 535,155 600,120 665,105 710,125" /><polyline fill="none" stroke="#facc15" strokeWidth="4" points="80,175 145,165 210,150 275,130 340,135 405,150 470,165 535,163 600,140 665,123 710,130" />
+            <text x="80" y="48" fill="#38bdf8" fontSize="15" fontWeight="800">MACD Line</text><text x="190" y="48" fill="#facc15" fontSize="15" fontWeight="800">Signal Line</text>
+          </>
+        ) : type === "technical" || type === "moving" ? (
+          <>
+            <line x1="60" y1="220" x2="710" y2="220" stroke="#22c55e" strokeWidth="3" strokeDasharray="8 8" /><text x="65" y="211" fill="#86efac" fontSize="14" fontWeight="800">Support / demand zone</text>
+            <line x1="60" y1="82" x2="710" y2="82" stroke="#f87171" strokeWidth="3" strokeDasharray="8 8" /><text x="65" y="73" fill="#fca5a5" fontSize="14" fontWeight="800">Resistance / supply zone</text>
+            <polyline fill="none" stroke="#38bdf8" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" points="60,230 120,200 175,215 235,160 290,175 345,130 400,145 460,100 525,120 595,88 665,103 710,76" />
+            {type === "moving" && <polyline fill="none" stroke="#facc15" strokeWidth="3" strokeLinecap="round" points="60,225 140,208 220,190 300,170 380,152 460,134 540,118 620,106 710,92" />}
           </>
         ) : type === "crypto" ? (
           <>
-            {[["Bitcoin",140,100,"#facc15"],["Ethereum",340,100,"#38bdf8"],["DeFi",540,100,"#22c55e"],["Tokenomics",250,195,"#a78bfa"],["Liquidity",470,195,"#fb7185"]].map(([label,x,y,color]) => (
-              <g key={String(label)}><circle cx={Number(x)} cy={Number(y)} r="48" fill={String(color)} opacity="0.18" /><circle cx={Number(x)} cy={Number(y)} r="47" stroke={String(color)} strokeWidth="3" fill="none" /><text x={Number(x)} y={Number(y)+5} textAnchor="middle" fill="#dbeafe" fontSize="14" fontWeight="800">{label}</text></g>
+            {[["Network",140,105,"#facc15"],["Security",340,105,"#38bdf8"],["Tokenomics",540,105,"#22c55e"],["Liquidity",250,205,"#a78bfa"],["Utility",470,205,"#fb7185"]].map(([label,x,y,color]) => (
+              <g key={String(label)}><circle cx={Number(x)} cy={Number(y)} r="52" fill={String(color)} opacity="0.18" /><circle cx={Number(x)} cy={Number(y)} r="51" stroke={String(color)} strokeWidth="3" fill="none" /><text x={Number(x)} y={Number(y)+5} textAnchor="middle" fill="#dbeafe" fontSize="14" fontWeight="800">{label}</text></g>
             ))}
+          </>
+        ) : type === "macro" ? (
+          <>
+            {[["Rates",115,135],["Inflation",265,85],["Liquidity",415,145],["Earnings",565,95],["Markets",665,175]].map(([label,x,y]) => (
+              <g key={String(label)}><rect x={Number(x)-55} y={Number(y)-30} width="110" height="60" rx="14" fill="rgba(37,99,235,0.22)" stroke="#60a5fa" /><text x={Number(x)} y={Number(y)+5} textAnchor="middle" fill="white" fontSize="14" fontWeight="900">{label}</text></g>
+            ))}
+            <polyline fill="none" stroke="#22c55e" strokeWidth="4" points="170,135 220,92 320,100 370,145 470,130 520,100 610,142" />
+          </>
+        ) : type === "portfolio" ? (
+          <>
+            {[["Stocks",180,160,90,"#38bdf8"],["Bonds",330,160,70,"#22c55e"],["Cash",460,160,45,"#facc15"],["Crypto",570,160,35,"#a78bfa"]].map(([label,x,y,r,color]) => (
+              <g key={String(label)}><circle cx={Number(x)} cy={Number(y)} r={Number(r)} fill={String(color)} opacity="0.16" stroke={String(color)} strokeWidth="3" /><text x={Number(x)} y={Number(y)+5} textAnchor="middle" fill="white" fontSize="15" fontWeight="900">{label}</text></g>
+            ))}
+            <text x="70" y="45" fill="#93c5fd" fontSize="16" fontWeight="900">Allocation balances return, volatility and liquidity.</text>
+          </>
+        ) : type === "trading" ? (
+          <>
+            <line x1="95" y1="220" x2="660" y2="220" stroke="#f87171" strokeWidth="3" strokeDasharray="8 8" /><text x="95" y="245" fill="#fca5a5" fontSize="14" fontWeight="800">Stop-loss / defined risk</text>
+            <line x1="95" y1="92" x2="660" y2="92" stroke="#22c55e" strokeWidth="3" strokeDasharray="8 8" /><text x="95" y="78" fill="#86efac" fontSize="14" fontWeight="800">Target / reward zone</text>
+            <polyline fill="none" stroke="#38bdf8" strokeWidth="4" points="95,185 155,175 215,165 275,150 335,132 395,118 455,110 515,99 575,88 650,95" />
+            <text x="420" y="180" fill="#dbeafe" fontSize="15" fontWeight="900">Plan before entry</text>
+          </>
+        ) : type === "psychology" ? (
+          <>
+            <path d="M95 210 C170 80, 260 80, 330 210 S500 340, 665 100" fill="none" stroke="#38bdf8" strokeWidth="5" />
+            <text x="90" y="55" fill="#fca5a5" fontSize="16" fontWeight="900">Fear</text><text x="330" y="55" fill="#facc15" fontSize="16" fontWeight="900">Greed</text><text x="610" y="55" fill="#86efac" fontSize="16" fontWeight="900">Discipline</text>
+            <text x="150" y="252" fill="#dbeafe" fontSize="15" fontWeight="800">Emotions must be converted into rules.</text>
           </>
         ) : (
           <>
-            <line x1="60" y1="210" x2="710" y2="210" stroke="#22c55e" strokeWidth="3" strokeDasharray="8 8" /><text x="65" y="202" fill="#86efac" fontSize="14" fontWeight="800">Support / Value zone</text>
-            <line x1="60" y1="75" x2="710" y2="75" stroke="#f87171" strokeWidth="3" strokeDasharray="8 8" /><text x="65" y="66" fill="#fca5a5" fontSize="14" fontWeight="800">Resistance / Expensive zone</text>
-            <polyline fill="none" stroke="#38bdf8" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" points="60,220 120,190 175,205 235,150 290,165 345,120 400,135 460,92 525,112 595,80 665,95 710,68" />
-            {type === "moving" && <polyline fill="none" stroke="#facc15" strokeWidth="3" strokeLinecap="round" points="60,215 140,198 220,180 300,160 380,142 460,124 540,108 620,96 710,82" />}
+            {nodes.map((label, index) => {
+              const x = 110 + index * 170;
+              return (
+                <g key={label}>
+                  <rect x={x - 65} y="105" width="130" height="76" rx="16" fill="rgba(37,99,235,0.22)" stroke="#60a5fa" />
+                  <text x={x} y="138" textAnchor="middle" fill="white" fontSize="14" fontWeight="900">{label}</text>
+                  {index < nodes.length - 1 ? <path d={`M ${x + 70} 143 H ${x + 100}`} stroke="#22c55e" strokeWidth="5" markerEnd="url(#arrow2)" /> : null}
+                </g>
+              );
+            })}
+            <defs><marker id="arrow2" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#22c55e" /></marker></defs>
           </>
         )}
+
+        {type !== "framework" ? (
+          <g>
+            {nodes.slice(0, 4).map((label, index) => (
+              <text key={label} x={70 + index * 170} y="288" fill="#94a3b8" fontSize="12" fontWeight="800">{label}</text>
+            ))}
+          </g>
+        ) : null}
       </svg>
     </div>
   );
@@ -588,7 +692,7 @@ export default function EducationPage() {
           <section style={styles.contentCard}>
             <div style={styles.lessonMeta}>{selectedLesson.level}</div>
             <h1 style={styles.lessonTitle}>Lesson {selectedLesson.id} — {selectedLesson.title}</h1>
-            <PracticalVisual type={visualType(selectedLesson.title)} />
+            <PracticalVisual type={visualType(selectedLesson.title)} title={selectedLesson.title} />
 
             <div style={styles.sectionsWrap}>
               {content.map((section) => (
