@@ -4,248 +4,270 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "../../lib/supabase/client";
 
 type PlanType = "basic" | "pro" | "unlimited" | "loading" | "guest";
-type Lesson = { id: number; level: string; title: string; };
+type Lesson = { id: number; level: string; title: string };
 
-const LESSON_ROWS = `1|НИВО 1 — ФИНАНСОВА ОСНОВА И МИСЛЕНЕ НА ИНВЕСТИТОР|Какво представляват парите
-2|НИВО 1 — ФИНАНСОВА ОСНОВА И МИСЛЕНЕ НА ИНВЕСТИТОР|История на парите и финансовите системи
-3|НИВО 1 — ФИНАНСОВА ОСНОВА И МИСЛЕНЕ НА ИНВЕСТИТОР|Инфлация и покупателна способност
-4|НИВО 1 — ФИНАНСОВА ОСНОВА И МИСЛЕНЕ НА ИНВЕСТИТОР|Сложна лихва и натрупване на капитал
-5|НИВО 1 — ФИНАНСОВА ОСНОВА И МИСЛЕНЕ НА ИНВЕСТИТОР|Разлика между активи и пасиви
-6|НИВО 1 — ФИНАНСОВА ОСНОВА И МИСЛЕНЕ НА ИНВЕСТИТОР|Как работи банковата система
-7|НИВО 1 — ФИНАНСОВА ОСНОВА И МИСЛЕНЕ НА ИНВЕСТИТОР|Централни банки и печатане на пари
-8|НИВО 1 — ФИНАНСОВА ОСНОВА И МИСЛЕНЕ НА ИНВЕСТИТОР|Дълг, кредити и лихвени проценти
-9|НИВО 1 — ФИНАНСОВА ОСНОВА И МИСЛЕНЕ НА ИНВЕСТИТОР|Финансова дисциплина и изграждане на капитал
-10|НИВО 1 — ФИНАНСОВА ОСНОВА И МИСЛЕНЕ НА ИНВЕСТИТОР|Психология на богатството
-11|НИВО 1 — ФИНАНСОВА ОСНОВА И МИСЛЕНЕ НА ИНВЕСТИТОР|Как мислят богатите инвеститори
-12|НИВО 1 — ФИНАНСОВА ОСНОВА И МИСЛЕНЕ НА ИНВЕСТИТОР|Основни финансови грешки на начинаещите
-13|НИВО 1 — ФИНАНСОВА ОСНОВА И МИСЛЕНЕ НА ИНВЕСТИТОР|Какво е инвестиране
-14|НИВО 1 — ФИНАНСОВА ОСНОВА И МИСЛЕНЕ НА ИНВЕСТИТОР|Инвестиране срещу спекулация
-15|НИВО 1 — ФИНАНСОВА ОСНОВА И МИСЛЕНЕ НА ИНВЕСТИТОР|Видове активи и asset classes
-16|НИВО 1 — ФИНАНСОВА ОСНОВА И МИСЛЕНЕ НА ИНВЕСТИТОР|Риск и възвръщаемост
-17|НИВО 1 — ФИНАНСОВА ОСНОВА И МИСЛЕНЕ НА ИНВЕСТИТОР|Времеви хоризонти при инвестирането
-18|НИВО 1 — ФИНАНСОВА ОСНОВА И МИСЛЕНЕ НА ИНВЕСТИТОР|Как работят финансовите пазари
-19|НИВО 1 — ФИНАНСОВА ОСНОВА И МИСЛЕНЕ НА ИНВЕСТИТОР|Институции на световните пазари
-20|НИВО 1 — ФИНАНСОВА ОСНОВА И МИСЛЕНЕ НА ИНВЕСТИТОР|Какво правят хедж фондовете и маркет мейкърите
-21|НИВО 2 — ФОНДОВ ПАЗАР И АКЦИИ|Какво е акция
-22|НИВО 2 — ФОНДОВ ПАЗАР И АКЦИИ|IPO и листване на компании
-23|НИВО 2 — ФОНДОВ ПАЗАР И АКЦИИ|Как работят борсите
-24|НИВО 2 — ФОНДОВ ПАЗАР И АКЦИИ|NYSE, NASDAQ и глобалните пазари
-25|НИВО 2 — ФОНДОВ ПАЗАР И АКЦИИ|Market Cap и Enterprise Value
-26|НИВО 2 — ФОНДОВ ПАЗАР И АКЦИИ|Growth vs Value компании
-27|НИВО 2 — ФОНДОВ ПАЗАР И АКЦИИ|Dividend Investing
-28|НИВО 2 — ФОНДОВ ПАЗАР И АКЦИИ|Buybacks и dilution
-29|НИВО 2 — ФОНДОВ ПАЗАР И АКЦИИ|Цикли на компаниите
-30|НИВО 2 — ФОНДОВ ПАЗАР И АКЦИИ|Sector Rotation
-31|НИВО 2 — ФОНДОВ ПАЗАР И АКЦИИ|Mega Caps vs Small Caps
-32|НИВО 2 — ФОНДОВ ПАЗАР И АКЦИИ|Defensive vs Cyclical stocks
-33|НИВО 2 — ФОНДОВ ПАЗАР И АКЦИИ|High Growth Investing
-34|НИВО 2 — ФОНДОВ ПАЗАР И АКЦИИ|Compounders и quality businesses
-35|НИВО 2 — ФОНДОВ ПАЗАР И АКЦИИ|Economic Moats
-36|НИВО 2 — ФОНДОВ ПАЗАР И АКЦИИ|Pricing Power
-37|НИВО 2 — ФОНДОВ ПАЗАР И АКЦИИ|Network Effects
-38|НИВО 2 — ФОНДОВ ПАЗАР И АКЦИИ|Competitive Advantages
-39|НИВО 2 — ФОНДОВ ПАЗАР И АКЦИИ|Institutional ownership
-40|НИВО 2 — ФОНДОВ ПАЗАР И АКЦИИ|Insider buying and selling
-41|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|Как да четем финансов отчет
-42|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|Income Statement
-43|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|Balance Sheet
-44|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|Cash Flow Statement
-45|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|Revenue analysis
-46|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|EPS analysis
-47|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|Gross Margin
-48|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|Operating Margin
-49|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|Net Margin
-50|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|EBITDA
-51|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|Free Cash Flow
-52|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|FCF Yield
-53|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|ROE
-54|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|ROIC
-55|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|ROA
-56|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|Debt analysis
-57|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|Interest Coverage
-58|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|Liquidity ratios
-59|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|P/E valuation
-60|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|PEG ratio
-61|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|P/S ratio
-62|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|EV/EBITDA
-63|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|DCF valuation
-64|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|Intrinsic Value
-65|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|Margin of Safety
-66|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|Earnings manipulation
-67|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|Accounting red flags
-68|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|Short seller analysis
-69|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|Institutional research workflow
-70|НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ|Building investment thesis
-71|НИВО 4 — МАКРОИКОНОМИКА ЗА ИНВЕСТИТОРИ|Какво е макроикономика
-72|НИВО 4 — МАКРОИКОНОМИКА ЗА ИНВЕСТИТОРИ|GDP и икономически растеж
-73|НИВО 4 — МАКРОИКОНОМИКА ЗА ИНВЕСТИТОРИ|CPI и инфлация
-74|НИВО 4 — МАКРОИКОНОМИКА ЗА ИНВЕСТИТОРИ|Deflation
-75|НИВО 4 — МАКРОИКОНОМИКА ЗА ИНВЕСТИТОРИ|Federal Reserve
-76|НИВО 4 — МАКРОИКОНОМИКА ЗА ИНВЕСТИТОРИ|ECB и глобалните централни банки
-77|НИВО 4 — МАКРОИКОНОМИКА ЗА ИНВЕСТИТОРИ|Interest Rates
-78|НИВО 4 — МАКРОИКОНОМИКА ЗА ИНВЕСТИТОРИ|Bond Market
-79|НИВО 4 — МАКРОИКОНОМИКА ЗА ИНВЕСТИТОРИ|Yield Curve
-80|НИВО 4 — МАКРОИКОНОМИКА ЗА ИНВЕСТИТОРИ|Quantitative Easing
-81|НИВО 4 — МАКРОИКОНОМИКА ЗА ИНВЕСТИТОРИ|Liquidity cycles
-82|НИВО 4 — МАКРОИКОНОМИКА ЗА ИНВЕСТИТОРИ|Dollar strength
-83|НИВО 4 — МАКРОИКОНОМИКА ЗА ИНВЕСТИТОРИ|Oil and commodities
-84|НИВО 4 — МАКРОИКОНОМИКА ЗА ИНВЕСТИТОРИ|Geopolitics and markets
-85|НИВО 4 — МАКРОИКОНОМИКА ЗА ИНВЕСТИТОРИ|Recessions
-86|НИВО 4 — МАКРОИКОНОМИКА ЗА ИНВЕСТИТОРИ|Credit crises
-87|НИВО 4 — МАКРОИКОНОМИКА ЗА ИНВЕСТИТОРИ|Banking crises
-88|НИВО 4 — МАКРОИКОНОМИКА ЗА ИНВЕСТИТОРИ|Debt cycles
-89|НИВО 4 — МАКРОИКОНОМИКА ЗА ИНВЕСТИТОРИ|Labor market
-90|НИВО 4 — МАКРОИКОНОМИКА ЗА ИНВЕСТИТОРИ|Consumer spending
-91|НИВО 4 — МАКРОИКОНОМИКА ЗА ИНВЕСТИТОРИ|Institutional positioning
-92|НИВО 4 — МАКРОИКОНОМИКА ЗА ИНВЕСТИТОРИ|Macro investing framework
-93|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|Основи на technical analysis
-94|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|Candlestick structure
-95|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|Support and Resistance
-96|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|Trend analysis
-97|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|Market structure
-98|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|Volume analysis
-99|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|Moving averages
-100|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|RSI
-101|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|MACD
-102|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|Bollinger Bands
-103|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|Fibonacci retracement
-104|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|VWAP
-105|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|ATR volatility
-106|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|Breakouts
-107|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|Fake breakouts
-108|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|Trend continuation
-109|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|Reversal patterns
-110|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|Divergences
-111|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|Multi timeframe analysis
-112|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|Chart psychology
-113|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|Liquidity zones
-114|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|Stop hunts
-115|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|Institutional order flow
-116|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|Smart Money Concepts
-117|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|Wyckoff Method
-118|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|Elliott Wave Theory
-119|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|Advanced chart reading
-120|НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ|Professional technical workflow
-121|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Day Trading
-122|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Swing Trading
-123|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Position Trading
-124|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Scalping
-125|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Momentum Trading
-126|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Breakout Trading
-127|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Mean Reversion
-128|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Trend Following
-129|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Volatility Trading
-130|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Pair Trading
-131|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Market Making basics
-132|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|High Frequency Trading overview
-133|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Futures trading
-134|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Options trading
-135|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Greeks in options
-136|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Hedging strategies
-137|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Leverage and margin
-138|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Risk/reward framework
-139|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Stop loss engineering
-140|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Position sizing
-141|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Portfolio exposure
-142|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Drawdown management
-143|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Trading journal
-144|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Backtesting
-145|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Strategy optimization
-146|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Probability and expectancy
-147|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Professional trader psychology
-148|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Institutional execution
-149|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Market manipulation
-150|НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ|Building a professional trading system
-151|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|История на Bitcoin
-152|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|Blockchain fundamentals
-153|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|Mining
-154|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|Wallets and custody
-155|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|Ethereum ecosystem
-156|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|Smart contracts
-157|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|Layer 1 vs Layer 2
-158|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|DeFi
-159|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|Staking
-160|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|Yield farming
-161|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|Liquidity pools
-162|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|Stablecoins
-163|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|Tokenomics
-164|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|Token unlocks
-165|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|On-chain analysis
-166|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|Crypto cycles
-167|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|Bitcoin halving
-168|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|Altcoin rotations
-169|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|NFT ecosystem
-170|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|AI crypto sector
-171|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|Meme coin psychology
-172|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|Crypto regulations
-173|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|Exchange risks
-174|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|Rug pulls and scams
-175|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|Institutional crypto adoption
-176|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|Crypto portfolio management
-177|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|Advanced crypto research
-178|НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN|Professional crypto investing framework
-179|НИВО 8 — ПСИХОЛОГИЯ И ПОВЕДЕНЧЕСКИ ФИНАНСИ|Fear and greed
-180|НИВО 8 — ПСИХОЛОГИЯ И ПОВЕДЕНЧЕСКИ ФИНАНСИ|FOMO
-181|НИВО 8 — ПСИХОЛОГИЯ И ПОВЕДЕНЧЕСКИ ФИНАНСИ|Panic selling
-182|НИВО 8 — ПСИХОЛОГИЯ И ПОВЕДЕНЧЕСКИ ФИНАНСИ|Overtrading
-183|НИВО 8 — ПСИХОЛОГИЯ И ПОВЕДЕНЧЕСКИ ФИНАНСИ|Revenge trading
-184|НИВО 8 — ПСИХОЛОГИЯ И ПОВЕДЕНЧЕСКИ ФИНАНСИ|Confirmation bias
-185|НИВО 8 — ПСИХОЛОГИЯ И ПОВЕДЕНЧЕСКИ ФИНАНСИ|Survivorship bias
-186|НИВО 8 — ПСИХОЛОГИЯ И ПОВЕДЕНЧЕСКИ ФИНАНСИ|Anchoring bias
-187|НИВО 8 — ПСИХОЛОГИЯ И ПОВЕДЕНЧЕСКИ ФИНАНСИ|Emotional discipline
-188|НИВО 8 — ПСИХОЛОГИЯ И ПОВЕДЕНЧЕСКИ ФИНАНСИ|Patience and conviction
-189|НИВО 8 — ПСИХОЛОГИЯ И ПОВЕДЕНЧЕСКИ ФИНАНСИ|Handling volatility
-190|НИВО 8 — ПСИХОЛОГИЯ И ПОВЕДЕНЧЕСКИ ФИНАНСИ|Long-term mindset
-191|НИВО 8 — ПСИХОЛОГИЯ И ПОВЕДЕНЧЕСКИ ФИНАНСИ|Institutional emotional control
-192|НИВО 8 — ПСИХОЛОГИЯ И ПОВЕДЕНЧЕСКИ ФИНАНСИ|Decision making under pressure
-193|НИВО 8 — ПСИХОЛОГИЯ И ПОВЕДЕНЧЕСКИ ФИНАНСИ|Professional investor mindset
-194|НИВО 9 — ПОРТФЕЙЛЕН МЕНИДЖМЪНТ|Portfolio construction
-195|НИВО 9 — ПОРТФЕЙЛЕН МЕНИДЖМЪНТ|Diversification
-196|НИВО 9 — ПОРТФЕЙЛЕН МЕНИДЖМЪНТ|Correlation
-197|НИВО 9 — ПОРТФЕЙЛЕН МЕНИДЖМЪНТ|Asset allocation
-198|НИВО 9 — ПОРТФЕЙЛЕН МЕНИДЖМЪНТ|Rebalancing
-199|НИВО 9 — ПОРТФЕЙЛЕН МЕНИДЖМЪНТ|Cash management
-200|НИВО 9 — ПОРТФЕЙЛЕН МЕНИДЖМЪНТ|Defensive positioning
-201|НИВО 9 — ПОРТФЕЙЛЕН МЕНИДЖМЪНТ|Aggressive growth allocation
-202|НИВО 9 — ПОРТФЕЙЛЕН МЕНИДЖМЪНТ|Risk parity
-203|НИВО 9 — ПОРТФЕЙЛЕН МЕНИДЖМЪНТ|Hedging portfolio risk
-204|НИВО 9 — ПОРТФЕЙЛЕН МЕНИДЖМЪНТ|Crisis management
-205|НИВО 9 — ПОРТФЕЙЛЕН МЕНИДЖМЪНТ|Black Swan events
-206|НИВО 9 — ПОРТФЕЙЛЕН МЕНИДЖМЪНТ|Portfolio stress testing
-207|НИВО 9 — ПОРТФЕЙЛЕН МЕНИДЖМЪНТ|Institutional portfolio management
-208|НИВО 9 — ПОРТФЕЙЛЕН МЕНИДЖМЪНТ|Building long-term wealth systems
-209|НИВО 10 — ПРОФЕСИОНАЛНО НИВО / ИНСТИТУЦИОНАЛНО МИСЛЕНЕ|How hedge funds operate
-210|НИВО 10 — ПРОФЕСИОНАЛНО НИВО / ИНСТИТУЦИОНАЛНО МИСЛЕНЕ|Institutional capital flows
-211|НИВО 10 — ПРОФЕСИОНАЛНО НИВО / ИНСТИТУЦИОНАЛНО МИСЛЕНЕ|Prime brokers
-212|НИВО 10 — ПРОФЕСИОНАЛНО НИВО / ИНСТИТУЦИОНАЛНО МИСЛЕНЕ|Dark pools
-213|НИВО 10 — ПРОФЕСИОНАЛНО НИВО / ИНСТИТУЦИОНАЛНО МИСЛЕНЕ|Liquidity engineering
-214|НИВО 10 — ПРОФЕСИОНАЛНО НИВО / ИНСТИТУЦИОНАЛНО МИСЛЕНЕ|Quantitative investing
-215|НИВО 10 — ПРОФЕСИОНАЛНО НИВО / ИНСТИТУЦИОНАЛНО МИСЛЕНЕ|Algorithmic trading
-216|НИВО 10 — ПРОФЕСИОНАЛНО НИВО / ИНСТИТУЦИОНАЛНО МИСЛЕНЕ|AI in investing
-217|НИВО 10 — ПРОФЕСИОНАЛНО НИВО / ИНСТИТУЦИОНАЛНО МИСЛЕНЕ|Macro hedge funds
-218|НИВО 10 — ПРОФЕСИОНАЛНО НИВО / ИНСТИТУЦИОНАЛНО МИСЛЕНЕ|Global capital cycles
-219|НИВО 10 — ПРОФЕСИОНАЛНО НИВО / ИНСТИТУЦИОНАЛНО МИСЛЕНЕ|Sovereign wealth funds
-220|НИВО 10 — ПРОФЕСИОНАЛНО НИВО / ИНСТИТУЦИОНАЛНО МИСЛЕНЕ|Private equity
-221|НИВО 10 — ПРОФЕСИОНАЛНО НИВО / ИНСТИТУЦИОНАЛНО МИСЛЕНЕ|Venture capital
-222|НИВО 10 — ПРОФЕСИОНАЛНО НИВО / ИНСТИТУЦИОНАЛНО МИСЛЕНЕ|IPO investing
-223|НИВО 10 — ПРОФЕСИОНАЛНО НИВО / ИНСТИТУЦИОНАЛНО МИСЛЕНЕ|Distressed investing
-224|НИВО 10 — ПРОФЕСИОНАЛНО НИВО / ИНСТИТУЦИОНАЛНО МИСЛЕНЕ|Crisis investing
-225|НИВО 10 — ПРОФЕСИОНАЛНО НИВО / ИНСТИТУЦИОНАЛНО МИСЛЕНЕ|Professional research systems
-226|НИВО 10 — ПРОФЕСИОНАЛНО НИВО / ИНСТИТУЦИОНАЛНО МИСЛЕНЕ|Building institutional-grade frameworks
-227|НИВО 10 — ПРОФЕСИОНАЛНО НИВО / ИНСТИТУЦИОНАЛНО МИСЛЕНЕ|Multi-asset investing
-228|НИВО 10 — ПРОФЕСИОНАЛНО НИВО / ИНСТИТУЦИОНАЛНО МИСЛЕНЕ|Becoming a professional investor`;
+const LESSON_ROWS = `1|LEVEL 1 — FINANCIAL FOUNDATION AND INVESTOR MINDSET|What Money Is
+2|LEVEL 1 — FINANCIAL FOUNDATION AND INVESTOR MINDSET|History of Money and Financial Systems
+3|LEVEL 1 — FINANCIAL FOUNDATION AND INVESTOR MINDSET|Inflation and Purchasing Power
+4|LEVEL 1 — FINANCIAL FOUNDATION AND INVESTOR MINDSET|Compound Interest and Capital Accumulation
+5|LEVEL 1 — FINANCIAL FOUNDATION AND INVESTOR MINDSET|Assets vs Liabilities
+6|LEVEL 1 — FINANCIAL FOUNDATION AND INVESTOR MINDSET|How the Banking System Works
+7|LEVEL 1 — FINANCIAL FOUNDATION AND INVESTOR MINDSET|Central Banks and Money Creation
+8|LEVEL 1 — FINANCIAL FOUNDATION AND INVESTOR MINDSET|Debt, Credit and Interest Rates
+9|LEVEL 1 — FINANCIAL FOUNDATION AND INVESTOR MINDSET|Financial Discipline and Capital Building
+10|LEVEL 1 — FINANCIAL FOUNDATION AND INVESTOR MINDSET|Psychology of Wealth
+11|LEVEL 1 — FINANCIAL FOUNDATION AND INVESTOR MINDSET|How Wealthy Investors Think
+12|LEVEL 1 — FINANCIAL FOUNDATION AND INVESTOR MINDSET|Common Financial Mistakes Beginners Make
+13|LEVEL 1 — FINANCIAL FOUNDATION AND INVESTOR MINDSET|What Investing Means
+14|LEVEL 1 — FINANCIAL FOUNDATION AND INVESTOR MINDSET|Investing vs Speculation
+15|LEVEL 1 — FINANCIAL FOUNDATION AND INVESTOR MINDSET|Asset Classes and Types of Assets
+16|LEVEL 1 — FINANCIAL FOUNDATION AND INVESTOR MINDSET|Risk and Return
+17|LEVEL 1 — FINANCIAL FOUNDATION AND INVESTOR MINDSET|Investment Time Horizons
+18|LEVEL 1 — FINANCIAL FOUNDATION AND INVESTOR MINDSET|How Financial Markets Work
+19|LEVEL 1 — FINANCIAL FOUNDATION AND INVESTOR MINDSET|Global Market Institutions
+20|LEVEL 1 — FINANCIAL FOUNDATION AND INVESTOR MINDSET|What Hedge Funds and Market Makers Do
+21|LEVEL 2 — STOCK MARKET AND EQUITIES|What a Stock Is
+22|LEVEL 2 — STOCK MARKET AND EQUITIES|IPO and Public Company Listings
+23|LEVEL 2 — STOCK MARKET AND EQUITIES|How Stock Exchanges Work
+24|LEVEL 2 — STOCK MARKET AND EQUITIES|NYSE, NASDAQ and Global Markets
+25|LEVEL 2 — STOCK MARKET AND EQUITIES|Market Capitalization and Enterprise Value
+26|LEVEL 2 — STOCK MARKET AND EQUITIES|Growth vs Value Companies
+27|LEVEL 2 — STOCK MARKET AND EQUITIES|Dividend Investing
+28|LEVEL 2 — STOCK MARKET AND EQUITIES|Buybacks and Dilution
+29|LEVEL 2 — STOCK MARKET AND EQUITIES|Company Life Cycles
+30|LEVEL 2 — STOCK MARKET AND EQUITIES|Sector Rotation
+31|LEVEL 2 — STOCK MARKET AND EQUITIES|Mega Caps vs Small Caps
+32|LEVEL 2 — STOCK MARKET AND EQUITIES|Defensive vs Cyclical Stocks
+33|LEVEL 2 — STOCK MARKET AND EQUITIES|High Growth Investing
+34|LEVEL 2 — STOCK MARKET AND EQUITIES|Compounders and Quality Businesses
+35|LEVEL 2 — STOCK MARKET AND EQUITIES|Economic Moats
+36|LEVEL 2 — STOCK MARKET AND EQUITIES|Pricing Power
+37|LEVEL 2 — STOCK MARKET AND EQUITIES|Network Effects
+38|LEVEL 2 — STOCK MARKET AND EQUITIES|Competitive Advantages
+39|LEVEL 2 — STOCK MARKET AND EQUITIES|Institutional Ownership
+40|LEVEL 2 — STOCK MARKET AND EQUITIES|Insider Buying and Selling
+41|LEVEL 3 — FUNDAMENTAL ANALYSIS|How to Read a Financial Report
+42|LEVEL 3 — FUNDAMENTAL ANALYSIS|Income Statement
+43|LEVEL 3 — FUNDAMENTAL ANALYSIS|Balance Sheet
+44|LEVEL 3 — FUNDAMENTAL ANALYSIS|Cash Flow Statement
+45|LEVEL 3 — FUNDAMENTAL ANALYSIS|Revenue Analysis
+46|LEVEL 3 — FUNDAMENTAL ANALYSIS|EPS Analysis
+47|LEVEL 3 — FUNDAMENTAL ANALYSIS|Gross Margin
+48|LEVEL 3 — FUNDAMENTAL ANALYSIS|Operating Margin
+49|LEVEL 3 — FUNDAMENTAL ANALYSIS|Net Margin
+50|LEVEL 3 — FUNDAMENTAL ANALYSIS|EBITDA
+51|LEVEL 3 — FUNDAMENTAL ANALYSIS|Free Cash Flow
+52|LEVEL 3 — FUNDAMENTAL ANALYSIS|FCF Yield
+53|LEVEL 3 — FUNDAMENTAL ANALYSIS|ROE
+54|LEVEL 3 — FUNDAMENTAL ANALYSIS|ROIC
+55|LEVEL 3 — FUNDAMENTAL ANALYSIS|ROA
+56|LEVEL 3 — FUNDAMENTAL ANALYSIS|Debt Analysis
+57|LEVEL 3 — FUNDAMENTAL ANALYSIS|Interest Coverage
+58|LEVEL 3 — FUNDAMENTAL ANALYSIS|Liquidity Ratios
+59|LEVEL 3 — FUNDAMENTAL ANALYSIS|P/E Valuation
+60|LEVEL 3 — FUNDAMENTAL ANALYSIS|PEG Ratio
+61|LEVEL 3 — FUNDAMENTAL ANALYSIS|P/S Ratio
+62|LEVEL 3 — FUNDAMENTAL ANALYSIS|EV/EBITDA
+63|LEVEL 3 — FUNDAMENTAL ANALYSIS|DCF Valuation
+64|LEVEL 3 — FUNDAMENTAL ANALYSIS|Intrinsic Value
+65|LEVEL 3 — FUNDAMENTAL ANALYSIS|Margin of Safety
+66|LEVEL 3 — FUNDAMENTAL ANALYSIS|Earnings Manipulation
+67|LEVEL 3 — FUNDAMENTAL ANALYSIS|Accounting Red Flags
+68|LEVEL 3 — FUNDAMENTAL ANALYSIS|Short Seller Analysis
+69|LEVEL 3 — FUNDAMENTAL ANALYSIS|Institutional Research Workflow
+70|LEVEL 3 — FUNDAMENTAL ANALYSIS|Building an Investment Thesis
+71|LEVEL 4 — MACROECONOMICS FOR INVESTORS|What Macroeconomics Is
+72|LEVEL 4 — MACROECONOMICS FOR INVESTORS|GDP and Economic Growth
+73|LEVEL 4 — MACROECONOMICS FOR INVESTORS|CPI and Inflation
+74|LEVEL 4 — MACROECONOMICS FOR INVESTORS|Deflation
+75|LEVEL 4 — MACROECONOMICS FOR INVESTORS|Federal Reserve
+76|LEVEL 4 — MACROECONOMICS FOR INVESTORS|ECB and Global Central Banks
+77|LEVEL 4 — MACROECONOMICS FOR INVESTORS|Interest Rates
+78|LEVEL 4 — MACROECONOMICS FOR INVESTORS|Bond Market
+79|LEVEL 4 — MACROECONOMICS FOR INVESTORS|Yield Curve
+80|LEVEL 4 — MACROECONOMICS FOR INVESTORS|Quantitative Easing
+81|LEVEL 4 — MACROECONOMICS FOR INVESTORS|Liquidity Cycles
+82|LEVEL 4 — MACROECONOMICS FOR INVESTORS|Dollar Strength
+83|LEVEL 4 — MACROECONOMICS FOR INVESTORS|Oil and Commodities
+84|LEVEL 4 — MACROECONOMICS FOR INVESTORS|Geopolitics and Markets
+85|LEVEL 4 — MACROECONOMICS FOR INVESTORS|Recessions
+86|LEVEL 4 — MACROECONOMICS FOR INVESTORS|Credit Crises
+87|LEVEL 4 — MACROECONOMICS FOR INVESTORS|Banking Crises
+88|LEVEL 4 — MACROECONOMICS FOR INVESTORS|Debt Cycles
+89|LEVEL 4 — MACROECONOMICS FOR INVESTORS|Labor Market
+90|LEVEL 4 — MACROECONOMICS FOR INVESTORS|Consumer Spending
+91|LEVEL 4 — MACROECONOMICS FOR INVESTORS|Institutional Positioning
+92|LEVEL 4 — MACROECONOMICS FOR INVESTORS|Macro Investing Framework
+93|LEVEL 5 — TECHNICAL ANALYSIS|Technical Analysis Basics
+94|LEVEL 5 — TECHNICAL ANALYSIS|Candlestick Structure
+95|LEVEL 5 — TECHNICAL ANALYSIS|Support and Resistance
+96|LEVEL 5 — TECHNICAL ANALYSIS|Trend Analysis
+97|LEVEL 5 — TECHNICAL ANALYSIS|Market Structure
+98|LEVEL 5 — TECHNICAL ANALYSIS|Volume Analysis
+99|LEVEL 5 — TECHNICAL ANALYSIS|Moving Averages
+100|LEVEL 5 — TECHNICAL ANALYSIS|RSI
+101|LEVEL 5 — TECHNICAL ANALYSIS|MACD
+102|LEVEL 5 — TECHNICAL ANALYSIS|Bollinger Bands
+103|LEVEL 5 — TECHNICAL ANALYSIS|Fibonacci Retracement
+104|LEVEL 5 — TECHNICAL ANALYSIS|VWAP
+105|LEVEL 5 — TECHNICAL ANALYSIS|ATR Volatility
+106|LEVEL 5 — TECHNICAL ANALYSIS|Breakouts
+107|LEVEL 5 — TECHNICAL ANALYSIS|Fake Breakouts
+108|LEVEL 5 — TECHNICAL ANALYSIS|Trend Continuation
+109|LEVEL 5 — TECHNICAL ANALYSIS|Reversal Patterns
+110|LEVEL 5 — TECHNICAL ANALYSIS|Divergences
+111|LEVEL 5 — TECHNICAL ANALYSIS|Multi-Timeframe Analysis
+112|LEVEL 5 — TECHNICAL ANALYSIS|Chart Psychology
+113|LEVEL 5 — TECHNICAL ANALYSIS|Liquidity Zones
+114|LEVEL 5 — TECHNICAL ANALYSIS|Stop Hunts
+115|LEVEL 5 — TECHNICAL ANALYSIS|Institutional Order Flow
+116|LEVEL 5 — TECHNICAL ANALYSIS|Smart Money Concepts
+117|LEVEL 5 — TECHNICAL ANALYSIS|Wyckoff Method
+118|LEVEL 5 — TECHNICAL ANALYSIS|Elliott Wave Theory
+119|LEVEL 5 — TECHNICAL ANALYSIS|Advanced Chart Reading
+120|LEVEL 5 — TECHNICAL ANALYSIS|Professional Technical Workflow
+121|LEVEL 6 — PROFESSIONAL TRADING|Day Trading
+122|LEVEL 6 — PROFESSIONAL TRADING|Swing Trading
+123|LEVEL 6 — PROFESSIONAL TRADING|Position Trading
+124|LEVEL 6 — PROFESSIONAL TRADING|Scalping
+125|LEVEL 6 — PROFESSIONAL TRADING|Momentum Trading
+126|LEVEL 6 — PROFESSIONAL TRADING|Breakout Trading
+127|LEVEL 6 — PROFESSIONAL TRADING|Mean Reversion
+128|LEVEL 6 — PROFESSIONAL TRADING|Trend Following
+129|LEVEL 6 — PROFESSIONAL TRADING|Volatility Trading
+130|LEVEL 6 — PROFESSIONAL TRADING|Pair Trading
+131|LEVEL 6 — PROFESSIONAL TRADING|Market Making Basics
+132|LEVEL 6 — PROFESSIONAL TRADING|High Frequency Trading Overview
+133|LEVEL 6 — PROFESSIONAL TRADING|Futures Trading
+134|LEVEL 6 — PROFESSIONAL TRADING|Options Trading
+135|LEVEL 6 — PROFESSIONAL TRADING|Greeks in Options
+136|LEVEL 6 — PROFESSIONAL TRADING|Hedging Strategies
+137|LEVEL 6 — PROFESSIONAL TRADING|Leverage and Margin
+138|LEVEL 6 — PROFESSIONAL TRADING|Risk/Reward Framework
+139|LEVEL 6 — PROFESSIONAL TRADING|Stop Loss Engineering
+140|LEVEL 6 — PROFESSIONAL TRADING|Position Sizing
+141|LEVEL 6 — PROFESSIONAL TRADING|Portfolio Exposure
+142|LEVEL 6 — PROFESSIONAL TRADING|Drawdown Management
+143|LEVEL 6 — PROFESSIONAL TRADING|Trading Journal
+144|LEVEL 6 — PROFESSIONAL TRADING|Backtesting
+145|LEVEL 6 — PROFESSIONAL TRADING|Strategy Optimization
+146|LEVEL 6 — PROFESSIONAL TRADING|Probability and Expectancy
+147|LEVEL 6 — PROFESSIONAL TRADING|Professional Trader Psychology
+148|LEVEL 6 — PROFESSIONAL TRADING|Institutional Execution
+149|LEVEL 6 — PROFESSIONAL TRADING|Market Manipulation
+150|LEVEL 6 — PROFESSIONAL TRADING|Building a Professional Trading System
+151|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|History of Bitcoin
+152|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|Blockchain Fundamentals
+153|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|Mining
+154|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|Wallets and Custody
+155|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|Ethereum Ecosystem
+156|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|Smart Contracts
+157|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|Layer 1 vs Layer 2
+158|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|DeFi
+159|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|Staking
+160|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|Yield Farming
+161|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|Liquidity Pools
+162|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|Stablecoins
+163|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|Tokenomics
+164|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|Token Unlocks
+165|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|On-Chain Analysis
+166|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|Crypto Cycles
+167|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|Bitcoin Halving
+168|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|Altcoin Rotations
+169|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|NFT Ecosystem
+170|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|AI Crypto Sector
+171|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|Meme Coin Psychology
+172|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|Crypto Regulations
+173|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|Exchange Risks
+174|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|Rug Pulls and Scams
+175|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|Institutional Crypto Adoption
+176|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|Crypto Portfolio Management
+177|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|Advanced Crypto Research
+178|LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN|Professional Crypto Investing Framework
+179|LEVEL 8 — PSYCHOLOGY AND BEHAVIORAL FINANCE|Fear and Greed
+180|LEVEL 8 — PSYCHOLOGY AND BEHAVIORAL FINANCE|FOMO
+181|LEVEL 8 — PSYCHOLOGY AND BEHAVIORAL FINANCE|Panic Selling
+182|LEVEL 8 — PSYCHOLOGY AND BEHAVIORAL FINANCE|Overtrading
+183|LEVEL 8 — PSYCHOLOGY AND BEHAVIORAL FINANCE|Revenge Trading
+184|LEVEL 8 — PSYCHOLOGY AND BEHAVIORAL FINANCE|Confirmation Bias
+185|LEVEL 8 — PSYCHOLOGY AND BEHAVIORAL FINANCE|Survivorship Bias
+186|LEVEL 8 — PSYCHOLOGY AND BEHAVIORAL FINANCE|Anchoring Bias
+187|LEVEL 8 — PSYCHOLOGY AND BEHAVIORAL FINANCE|Emotional Discipline
+188|LEVEL 8 — PSYCHOLOGY AND BEHAVIORAL FINANCE|Patience and Conviction
+189|LEVEL 8 — PSYCHOLOGY AND BEHAVIORAL FINANCE|Handling Volatility
+190|LEVEL 8 — PSYCHOLOGY AND BEHAVIORAL FINANCE|Long-Term Mindset
+191|LEVEL 8 — PSYCHOLOGY AND BEHAVIORAL FINANCE|Institutional Emotional Control
+192|LEVEL 8 — PSYCHOLOGY AND BEHAVIORAL FINANCE|Decision Making Under Pressure
+193|LEVEL 8 — PSYCHOLOGY AND BEHAVIORAL FINANCE|Professional Investor Mindset
+194|LEVEL 9 — PORTFOLIO MANAGEMENT|Portfolio Construction
+195|LEVEL 9 — PORTFOLIO MANAGEMENT|Diversification
+196|LEVEL 9 — PORTFOLIO MANAGEMENT|Correlation
+197|LEVEL 9 — PORTFOLIO MANAGEMENT|Asset Allocation
+198|LEVEL 9 — PORTFOLIO MANAGEMENT|Rebalancing
+199|LEVEL 9 — PORTFOLIO MANAGEMENT|Cash Management
+200|LEVEL 9 — PORTFOLIO MANAGEMENT|Defensive Positioning
+201|LEVEL 9 — PORTFOLIO MANAGEMENT|Aggressive Growth Allocation
+202|LEVEL 9 — PORTFOLIO MANAGEMENT|Risk Parity
+203|LEVEL 9 — PORTFOLIO MANAGEMENT|Hedging Portfolio Risk
+204|LEVEL 9 — PORTFOLIO MANAGEMENT|Crisis Management
+205|LEVEL 9 — PORTFOLIO MANAGEMENT|Black Swan Events
+206|LEVEL 9 — PORTFOLIO MANAGEMENT|Portfolio Stress Testing
+207|LEVEL 9 — PORTFOLIO MANAGEMENT|Institutional Portfolio Management
+208|LEVEL 9 — PORTFOLIO MANAGEMENT|Building Long-Term Wealth Systems
+209|LEVEL 10 — PROFESSIONAL AND INSTITUTIONAL THINKING|How Hedge Funds Operate
+210|LEVEL 10 — PROFESSIONAL AND INSTITUTIONAL THINKING|Institutional Capital Flows
+211|LEVEL 10 — PROFESSIONAL AND INSTITUTIONAL THINKING|Prime Brokers
+212|LEVEL 10 — PROFESSIONAL AND INSTITUTIONAL THINKING|Dark Pools
+213|LEVEL 10 — PROFESSIONAL AND INSTITUTIONAL THINKING|Liquidity Engineering
+214|LEVEL 10 — PROFESSIONAL AND INSTITUTIONAL THINKING|Quantitative Investing
+215|LEVEL 10 — PROFESSIONAL AND INSTITUTIONAL THINKING|Algorithmic Trading
+216|LEVEL 10 — PROFESSIONAL AND INSTITUTIONAL THINKING|AI in Investing
+217|LEVEL 10 — PROFESSIONAL AND INSTITUTIONAL THINKING|Macro Hedge Funds
+218|LEVEL 10 — PROFESSIONAL AND INSTITUTIONAL THINKING|Global Capital Cycles
+219|LEVEL 10 — PROFESSIONAL AND INSTITUTIONAL THINKING|Sovereign Wealth Funds
+220|LEVEL 10 — PROFESSIONAL AND INSTITUTIONAL THINKING|Private Equity
+221|LEVEL 10 — PROFESSIONAL AND INSTITUTIONAL THINKING|Venture Capital
+222|LEVEL 10 — PROFESSIONAL AND INSTITUTIONAL THINKING|IPO Investing
+223|LEVEL 10 — PROFESSIONAL AND INSTITUTIONAL THINKING|Distressed Investing
+224|LEVEL 10 — PROFESSIONAL AND INSTITUTIONAL THINKING|Crisis Investing
+225|LEVEL 10 — PROFESSIONAL AND INSTITUTIONAL THINKING|Professional Research Systems
+226|LEVEL 10 — PROFESSIONAL AND INSTITUTIONAL THINKING|Building Institutional-Grade Frameworks
+227|LEVEL 10 — PROFESSIONAL AND INSTITUTIONAL THINKING|Multi-Asset Investing
+228|LEVEL 10 — PROFESSIONAL AND INSTITUTIONAL THINKING|Becoming a Professional Investor
+229|LEVEL 11 — VIDEO LESSONS|Video Lesson Roadmap
+230|LEVEL 11 — VIDEO LESSONS|Screen Recording: Reading a Stock Chart
+231|LEVEL 11 — VIDEO LESSONS|Screen Recording: Reading an Income Statement
+232|LEVEL 11 — VIDEO LESSONS|Video Walkthrough: Building a Watchlist
+233|LEVEL 11 — VIDEO LESSONS|Video Walkthrough: Using RSI and MACD Correctly
+234|LEVEL 11 — VIDEO LESSONS|Video Walkthrough: Comparing Two Companies
+235|LEVEL 11 — VIDEO LESSONS|Video Walkthrough: Crypto Tokenomics Research
+236|LEVEL 11 — VIDEO LESSONS|Video Walkthrough: Portfolio Risk Review
+237|LEVEL 11 — VIDEO LESSONS|Video Walkthrough: Building a Trading Journal
+238|LEVEL 11 — VIDEO LESSONS|Video Lesson Checklist and Production Plan
+239|LEVEL 12 — TECHNICAL LITERATURE|Beginner Reading Path
+240|LEVEL 12 — TECHNICAL LITERATURE|Core Books for Long-Term Investors
+241|LEVEL 12 — TECHNICAL LITERATURE|Core Books for Traders
+242|LEVEL 12 — TECHNICAL LITERATURE|Financial Statement Reading Materials
+243|LEVEL 12 — TECHNICAL LITERATURE|Macroeconomics Reading Materials
+244|LEVEL 12 — TECHNICAL LITERATURE|Technical Analysis Reading Materials
+245|LEVEL 12 — TECHNICAL LITERATURE|Crypto and Blockchain Reading Materials
+246|LEVEL 12 — TECHNICAL LITERATURE|Behavioral Finance Reading Materials
+247|LEVEL 12 — TECHNICAL LITERATURE|Institutional Research Papers
+248|LEVEL 12 — TECHNICAL LITERATURE|Reading Notes and Study System`;
 
 const LEVEL_DESCRIPTIONS: Record<string, string> = {
-  "НИВО 1 — ФИНАНСОВА ОСНОВА И МИСЛЕНЕ НА ИНВЕСТИТОР": "Пари, инфлация, банки, риск, активи, финансова дисциплина и първи принципи.",
-  "НИВО 2 — ФОНДОВ ПАЗАР И АКЦИИ": "Акции, борси, IPO, капитализация, дивиденти, buybacks, moats и институционална собственост.",
-  "НИВО 3 — ФУНДАМЕНТАЛЕН АНАЛИЗ": "Финансови отчети, приходи, EPS, маржове, ROIC, DCF, intrinsic value и инвестиционна теза.",
-  "НИВО 4 — МАКРОИКОНОМИКА ЗА ИНВЕСТИТОРИ": "GDP, CPI, лихви, облигации, ликвидност, долар, суровини, кризи и макро рамка.",
-  "НИВО 5 — ТЕХНИЧЕСКИ АНАЛИЗ": "Свещи, тренд, volume, RSI, MACD, VWAP, ATR, Wyckoff, Elliott и професионален workflow.",
-  "НИВО 6 — ПРОФЕСИОНАЛЕН ТРЕЙДИНГ": "Day trading, swing trading, options, futures, leverage, stop loss, position sizing и execution.",
-  "НИВО 7 — КРИПТОВАЛУТИ И BLOCKCHAIN": "Bitcoin, Ethereum, DeFi, staking, tokenomics, unlocks, on-chain, scams и crypto cycles.",
-  "НИВО 8 — ПСИХОЛОГИЯ И ПОВЕДЕНЧЕСКИ ФИНАНСИ": "Fear, greed, FOMO, bias, discipline, patience, volatility и decision making.",
-  "НИВО 9 — ПОРТФЕЙЛЕН МЕНИДЖМЪНТ": "Portfolio construction, diversification, correlation, allocation, rebalancing, hedging и stress testing.",
-  "НИВО 10 — ПРОФЕСИОНАЛНО НИВО / ИНСТИТУЦИОНАЛНО МИСЛЕНЕ": "Hedge funds, dark pools, quant, AI, private equity, capital flows и institutional-grade frameworks.",
+  "LEVEL 1 — FINANCIAL FOUNDATION AND INVESTOR MINDSET": "Money, inflation, banks, debt, risk, asset classes and the first principles of disciplined investing.",
+  "LEVEL 2 — STOCK MARKET AND EQUITIES": "Stocks, exchanges, IPOs, dividends, buybacks, company quality, economic moats and institutional ownership.",
+  "LEVEL 3 — FUNDAMENTAL ANALYSIS": "Financial statements, revenue, EPS, margins, debt, cash flow, valuation, DCF and investment thesis construction.",
+  "LEVEL 4 — MACROECONOMICS FOR INVESTORS": "GDP, CPI, inflation, interest rates, bonds, liquidity, currencies, commodities and macro market regimes.",
+  "LEVEL 5 — TECHNICAL ANALYSIS": "Candles, trends, volume, RSI, MACD, VWAP, ATR, liquidity zones, Wyckoff, Elliott Wave and professional chart workflow.",
+  "LEVEL 6 — PROFESSIONAL TRADING": "Trading styles, futures, options, leverage, position sizing, backtesting, execution, psychology and trading systems.",
+  "LEVEL 7 — CRYPTOCURRENCIES AND BLOCKCHAIN": "Bitcoin, Ethereum, blockchain, DeFi, staking, tokenomics, unlocks, on-chain research, scams and crypto cycles.",
+  "LEVEL 8 — PSYCHOLOGY AND BEHAVIORAL FINANCE": "Fear, greed, FOMO, cognitive biases, discipline, volatility, patience and professional decision-making.",
+  "LEVEL 9 — PORTFOLIO MANAGEMENT": "Portfolio construction, diversification, correlation, allocation, rebalancing, hedging, stress testing and wealth systems.",
+  "LEVEL 10 — PROFESSIONAL AND INSTITUTIONAL THINKING": "Hedge funds, capital flows, prime brokers, dark pools, quant strategies, AI, private equity and institutional frameworks.",
+  "LEVEL 11 — VIDEO LESSONS": "A dedicated section prepared for future screen-recorded lessons, chart walkthroughs, case studies and guided tutorials.",
+  "LEVEL 12 — TECHNICAL LITERATURE": "A structured reading library for books, reports, research papers, study notes, checklists and professional references.",
 };
 
 function parseLessons(): Lesson[] {
@@ -263,176 +285,131 @@ function groupByLevel(lessons: Lesson[]) {
   }, {});
 }
 
-function contains(text: string, words: string[]) {
-  const t = text.toLowerCase();
-  return words.some((w) => t.includes(w.toLowerCase()));
+function has(text: string, terms: string[]) {
+  const lower = text.toLowerCase();
+  return terms.some((term) => lower.includes(term.toLowerCase()));
+}
+
+function getCategory(title: string) {
+  if (has(title, ["Money", "Inflation", "Compound", "Banking", "Central Banks", "Debt", "Credit", "Interest Rates", "Financial Discipline", "Wealth", "Investing", "Speculation", "Asset Classes", "Risk and Return", "Time Horizons", "Financial Markets", "Market Institutions", "Market Makers"])) return "foundation";
+  if (has(title, ["Stock", "IPO", "Exchanges", "NYSE", "NASDAQ", "Market Capitalization", "Enterprise Value", "Growth", "Value", "Dividend", "Buybacks", "Dilution", "Sector", "Mega Caps", "Small Caps", "Defensive", "Cyclical", "Moats", "Pricing Power", "Network Effects", "Competitive", "Institutional Ownership", "Insider"])) return "stocks";
+  if (has(title, ["Financial Report", "Income Statement", "Balance Sheet", "Cash Flow", "Revenue", "EPS", "Margin", "EBITDA", "Free Cash Flow", "FCF", "ROE", "ROIC", "ROA", "Debt Analysis", "Interest Coverage", "Liquidity Ratios", "P/E", "PEG", "P/S", "EV/EBITDA", "DCF", "Intrinsic", "Margin of Safety", "Earnings Manipulation", "Accounting", "Short Seller", "Research Workflow", "Investment Thesis"])) return "fundamental";
+  if (has(title, ["Macroeconomics", "GDP", "CPI", "Deflation", "Federal Reserve", "ECB", "Bond", "Yield Curve", "Quantitative Easing", "Liquidity Cycles", "Dollar", "Oil", "Commodities", "Geopolitics", "Recessions", "Credit Crises", "Banking Crises", "Debt Cycles", "Labor Market", "Consumer Spending", "Macro"])) return "macro";
+  if (has(title, ["Technical", "Candlestick", "Support", "Resistance", "Trend", "Market Structure", "Volume", "Moving Averages", "RSI", "MACD", "Bollinger", "Fibonacci", "VWAP", "ATR", "Breakouts", "Reversal", "Divergences", "Timeframe", "Chart", "Liquidity Zones", "Stop Hunts", "Order Flow", "Smart Money", "Wyckoff", "Elliott"])) return "technical";
+  if (has(title, ["Trading", "Scalping", "Momentum", "Mean Reversion", "Pair", "Market Making", "High Frequency", "Futures", "Options", "Greeks", "Hedging", "Leverage", "Risk/Reward", "Stop Loss", "Position Sizing", "Exposure", "Drawdown", "Journal", "Backtesting", "Strategy", "Probability", "Expectancy", "Execution", "Manipulation"])) return "trading";
+  if (has(title, ["Bitcoin", "Blockchain", "Mining", "Wallets", "Ethereum", "Smart Contracts", "Layer", "DeFi", "Staking", "Yield Farming", "Liquidity Pools", "Stablecoins", "Tokenomics", "Token Unlocks", "On-Chain", "Crypto", "Halving", "Altcoin", "NFT", "Meme", "Exchange Risks", "Rug Pulls"])) return "crypto";
+  if (has(title, ["Fear", "Greed", "FOMO", "Panic", "Overtrading", "Revenge", "Bias", "Discipline", "Patience", "Volatility", "Mindset", "Decision Making"])) return "psychology";
+  if (has(title, ["Portfolio", "Diversification", "Correlation", "Allocation", "Rebalancing", "Cash Management", "Defensive Positioning", "Aggressive", "Risk Parity", "Hedging Portfolio", "Crisis Management", "Black Swan", "Stress Testing", "Wealth Systems"])) return "portfolio";
+  if (has(title, ["Hedge Funds", "Capital Flows", "Prime Brokers", "Dark Pools", "Liquidity Engineering", "Quantitative", "Algorithmic", "AI", "Macro Hedge", "Sovereign", "Private Equity", "Venture Capital", "IPO Investing", "Distressed", "Crisis Investing", "Institutional-Grade", "Multi-Asset", "Professional Investor"])) return "institutional";
+  if (has(title, ["Video", "Screen Recording", "Walkthrough"])) return "video";
+  if (has(title, ["Reading", "Books", "Materials", "Papers", "Notes", "Literature"])) return "literature";
+  return "general";
 }
 
 function formulaFor(title: string) {
-  if (contains(title, ["Инфлация", "CPI"])) return {
-    formula: "Inflation Rate = (Current CPI - Previous CPI) / Previous CPI × 100",
-    example: "Ако CPI миналата година е 250, а тази година е 270, инфлацията е (270 - 250) / 250 × 100 = 8%. Ако депозитът ти носи 2%, реалната доходност е приблизително 2% - 8% = -6%."
+  if (has(title, ["Inflation", "CPI"])) return { formula: "Inflation Rate = (Current CPI - Previous CPI) / Previous CPI × 100", example: "If CPI rises from 250 to 270, inflation is (270 - 250) / 250 × 100 = 8%. If your cash earns 2%, the approximate real return is 2% - 8% = -6%." };
+  if (has(title, ["Compound Interest"])) return { formula: "Future Value = Present Value × (1 + r)^n", example: "Investing $10,000 at 8% annually for 20 years gives 10,000 × (1.08)^20 = $46,610. Time and reinvestment do most of the heavy work." };
+  if (has(title, ["Market Capitalization", "Enterprise Value"])) return { formula: "Market Cap = Share Price × Shares Outstanding\nEnterprise Value = Market Cap + Total Debt - Cash", example: "A $120 share price and 1 billion shares create a $120 billion market cap. With $20 billion debt and $10 billion cash, EV = 120 + 20 - 10 = $130 billion." };
+  if (has(title, ["Revenue"])) return { formula: "Revenue = Price × Units Sold\nRevenue Growth = (Current Revenue - Previous Revenue) / Previous Revenue × 100", example: "1 million units sold at $50 create $50 million revenue. If sales become 1.2 million units at $55, revenue becomes $66 million, a 32% increase." };
+  if (has(title, ["EPS"])) return { formula: "EPS = Net Income / Shares Outstanding", example: "A company with $10 billion net income and 5 billion shares has EPS of $2. If EPS grows to $2.50, EPS growth is 25%." };
+  if (has(title, ["P/E"])) return { formula: "P/E = Share Price / EPS\nImplied Price = EPS × P/E", example: "EPS of $7 and a P/E of 28 imply a $196 price. If EPS rises to $8 but the P/E compresses to 22, the implied price becomes $176." };
+  if (has(title, ["PEG"])) return { formula: "PEG = P/E / EPS Growth Rate", example: "A company with P/E 30 and EPS growth 20% has PEG 1.5. A P/E 20 company growing 5% has PEG 4.0. Lower P/E does not always mean better value." };
+  if (has(title, ["P/S"])) return { formula: "P/S = Market Cap / Revenue", example: "A $100 billion market cap and $25 billion revenue create a P/S ratio of 4. This is often useful for high-growth companies with limited current earnings." };
+  if (has(title, ["EBITDA"])) return { formula: "EBITDA = Operating Income + Depreciation + Amortization\nEV/EBITDA = Enterprise Value / EBITDA", example: "Operating income of $8 billion plus D&A of $1.5 billion gives EBITDA of $9.5 billion. EV of $95 billion gives EV/EBITDA of 10." };
+  if (has(title, ["Free Cash Flow", "FCF"])) return { formula: "FCF = Operating Cash Flow - Capital Expenditures\nFCF Yield = FCF / Market Cap × 100", example: "Operating cash flow of $15 billion minus capex of $5 billion gives FCF of $10 billion. With a $200 billion market cap, FCF yield is 5%." };
+  if (has(title, ["Gross Margin"])) return { formula: "Gross Margin = (Revenue - COGS) / Revenue × 100", example: "Revenue of $100 million and COGS of $40 million give gross margin of 60%. High gross margin often signals product strength or brand power." };
+  if (has(title, ["Operating Margin"])) return { formula: "Operating Margin = Operating Income / Revenue × 100", example: "Operating income of $25 million and revenue of $100 million give operating margin of 25%. Rising operating margin often shows scalability." };
+  if (has(title, ["Net Margin"])) return { formula: "Net Margin = Net Income / Revenue × 100", example: "Net income of $18 million and revenue of $100 million give net margin of 18%. If revenue grows but net margin falls, expenses may be absorbing the growth." };
+  if (has(title, ["ROE"])) return { formula: "ROE = Net Income / Shareholders' Equity × 100", example: "Net income of $10 billion and equity of $50 billion give ROE of 20%. Always check whether high ROE is driven by excessive leverage." };
+  if (has(title, ["ROIC"])) return { formula: "ROIC = NOPAT / Invested Capital × 100", example: "NOPAT of $8 billion and invested capital of $40 billion give ROIC of 20%. Consistently high ROIC often indicates a high-quality business." };
+  if (has(title, ["ROA"])) return { formula: "ROA = Net Income / Total Assets × 100", example: "Net income of $10 billion and total assets of $100 billion give ROA of 10%. ROA measures how efficiently assets create profit." };
+  if (has(title, ["Debt", "Interest Coverage", "Liquidity Ratios"])) return { formula: "Net Debt = Total Debt - Cash\nInterest Coverage = EBIT / Interest Expense", example: "Debt of $30 billion and cash of $12 billion create net debt of $18 billion. EBIT of $10 billion and interest expense of $1 billion give interest coverage of 10." };
+  if (has(title, ["RSI"])) return { formula: "RSI = 100 - [100 / (1 + RS)]\nRS = Average Gain / Average Loss", example: "RSI above 70 can signal strong momentum or overheating. RSI below 30 can signal oversold conditions. It should never be used alone." };
+  if (has(title, ["MACD"])) return { formula: "MACD Line = 12 EMA - 26 EMA\nSignal Line = 9 EMA of MACD\nHistogram = MACD Line - Signal Line", example: "A bullish MACD cross suggests improving momentum, but in sideways markets MACD can create many false signals." };
+  if (has(title, ["Moving Averages"])) return { formula: "SMA = Sum of Closing Prices / Number of Periods", example: "Closing prices of 100, 102, 101, 105 and 107 create a 5-day SMA of 103. Price above the 200-day average often signals long-term strength." };
+  if (has(title, ["ATR"])) return { formula: "True Range = max(High-Low, |High-Previous Close|, |Low-Previous Close|)\nATR = Average True Range", example: "If ATR is $5, a $1 stop is probably too tight and may be hit by normal market noise." };
+  if (has(title, ["VWAP"])) return { formula: "VWAP = Sum(Price × Volume) / Sum(Volume)", example: "An institution buying below VWAP receives a better average price than the volume-weighted market average for the session." };
+  if (has(title, ["Position Sizing", "Risk/Reward"])) return { formula: "Position Size = Amount Risked / Stop Loss Distance\nExpected Value = (Win Rate × Average Win) - (Loss Rate × Average Loss)", example: "With a $100,000 portfolio and 1% risk, the dollar risk is $1,000. If the stop is 5%, position size is $20,000." };
+  if (has(title, ["Bitcoin", "Ethereum", "Crypto", "Token", "DeFi", "Blockchain"])) return { formula: "Crypto Market Cap = Token Price × Circulating Supply\nFDV = Token Price × Max Supply", example: "A token priced at $2 with 500 million circulating supply has a $1 billion market cap. If max supply is 2 billion, FDV is $4 billion." };
+  return { formula: "Professional Framework = Concept + Numbers + Context + Risk Management", example: "A professional decision combines business quality, valuation, macro conditions, liquidity, risk control and market behavior. One metric is never enough." };
+}
+
+function specificDescription(title: string) {
+  const category = getCategory(title);
+  const name = title.replace(/^Lesson \d+ — /, "");
+  const base: Record<string, string> = {
+    foundation: `${name} explains the financial foundation behind every investment decision. The lesson connects personal finance, purchasing power, capital formation and rational decision-making, so a beginner can understand how money, time, risk and behavior shape long-term wealth.`,
+    stocks: `${name} explains how equity ownership works in real markets. The lesson connects company quality, shareholder rights, valuation, sector behavior and institutional participation, so a beginner can understand why stock prices move and how to judge whether a business deserves capital.`,
+    fundamental: `${name} explains how investors read business performance through financial statements and valuation metrics. The lesson focuses on numbers, formulas, quality of earnings, cash generation, balance sheet strength and the difference between accounting profit and real owner value.`,
+    macro: `${name} explains how the broad economy affects stocks, bonds, currencies, commodities and crypto. The lesson connects growth, inflation, central banks, interest rates, liquidity and investor positioning, so the student can understand why markets react to economic data.`,
+    technical: `${name} explains how market participants express behavior through price, volume and chart structure. The lesson teaches the tool as a decision framework, not as a magic signal, and shows how professionals combine it with trend, liquidity, volatility and risk management.`,
+    trading: `${name} explains a practical trading concept used to manage entries, exits, risk and execution. The lesson focuses on process, probability, position sizing, discipline and avoiding emotional decisions in fast-moving markets.`,
+    crypto: `${name} explains a crypto and blockchain concept from the perspective of security, utility, liquidity, token supply and adoption. The lesson helps beginners avoid hype-driven decisions and analyze crypto assets like serious market instruments.`,
+    psychology: `${name} explains a behavioral finance concept that affects real investor performance. The lesson focuses on emotional control, cognitive bias, decision quality and the gap between knowing what to do and actually doing it under pressure.`,
+    portfolio: `${name} explains how investors combine assets into a coherent portfolio. The lesson focuses on diversification, correlation, risk budgeting, rebalancing and building a system that can survive different market environments.`,
+    institutional: `${name} explains how professional market participants think, operate and allocate capital. The lesson connects large-scale capital flows, execution, liquidity, research systems and institutional decision-making.`,
+    video: `${name} is a prepared module for future visual education. It defines what the video lesson will demonstrate on screen, what chart or report will be used, what the viewer should learn and how the topic will connect to practical investing decisions.`,
+    literature: `${name} is a structured reading module. It explains what type of books, reports, research papers or notes belong in this section, how to study them and how to convert reading into practical investment skill.`,
+    general: `${name} explains an important market concept through definitions, examples, formulas where relevant and practical institutional context.`,
   };
-  if (contains(title, ["Сложна лихва"])) return {
-    formula: "Future Value = Present Value × (1 + r)^n",
-    example: "Ако инвестираш $10,000 при 8% годишно за 20 години: FV = 10,000 × (1.08)^20 = $46,610. Това показва защо времето е най-силният съюзник на инвеститора."
-  };
-  if (contains(title, ["Market Cap", "Enterprise Value"])) return {
-    formula: "Market Cap = Share Price × Shares Outstanding\nEnterprise Value = Market Cap + Total Debt - Cash",
-    example: "Цена $120 и 1 млрд. акции дават Market Cap $120 млрд. Ако дългът е $20 млрд., а кешът $10 млрд., EV = 120 + 20 - 10 = $130 млрд."
-  };
-  if (contains(title, ["Revenue"])) return {
-    formula: "Revenue = Price × Units Sold\nRevenue Growth = (Current Revenue - Previous Revenue) / Previous Revenue × 100",
-    example: "1 млн. продукта по $50 = $50 млн. приходи. След година 1.2 млн. продукта по $55 = $66 млн. Растежът е 32%."
-  };
-  if (contains(title, ["EPS"])) return {
-    formula: "EPS = Net Income / Shares Outstanding",
-    example: "Нетна печалба $10 млрд. и 5 млрд. акции дават EPS $2. Ако EPS стане $2.50, растежът е 25%."
-  };
-  if (contains(title, ["P/E"])) return {
-    formula: "P/E = Share Price / EPS\nImplied Price = EPS × P/E",
-    example: "EPS $7 и P/E 28 дават цена $196. Ако EPS стане $8, но P/E падне до 22, цената е $176. Затова растежът и valuation multiple са еднакво важни."
-  };
-  if (contains(title, ["PEG"])) return {
-    formula: "PEG = P/E / EPS Growth Rate",
-    example: "P/E 30 и EPS растеж 20% дават PEG 1.5. P/E 20 и растеж 5% дават PEG 4.0. По-ниският P/E не винаги е по-добър."
-  };
-  if (contains(title, ["P/S"])) return {
-    formula: "P/S = Market Cap / Revenue",
-    example: "Market Cap $100 млрд. и приходи $25 млрд. дават P/S 4. Показателят е полезен за растежни компании без стабилна печалба."
-  };
-  if (contains(title, ["EBITDA"])) return {
-    formula: "EBITDA = Operating Income + Depreciation + Amortization\nEV/EBITDA = Enterprise Value / EBITDA",
-    example: "Operating Income $8 млрд., D&A $1.5 млрд. => EBITDA $9.5 млрд. EV $95 млрд. => EV/EBITDA 10."
-  };
-  if (contains(title, ["Free Cash Flow", "FCF"])) return {
-    formula: "FCF = Operating Cash Flow - Capital Expenditures\nFCF Yield = FCF / Market Cap × 100",
-    example: "Operating Cash Flow $15 млрд. и CapEx $5 млрд. дават FCF $10 млрд. При Market Cap $200 млрд. FCF Yield = 5%."
-  };
-  if (contains(title, ["Gross Margin"])) return {
-    formula: "Gross Margin = (Revenue - COGS) / Revenue × 100",
-    example: "Приходи $100 млн. и COGS $40 млн. дават gross margin 60%. Високият марж често означава силен продукт или brand power."
-  };
-  if (contains(title, ["Operating Margin"])) return {
-    formula: "Operating Margin = Operating Income / Revenue × 100",
-    example: "Operating Income $25 млн. и приходи $100 млн. дават operating margin 25%. Ако маржът расте, бизнесът мащабира по-ефективно."
-  };
-  if (contains(title, ["Net Margin"])) return {
-    formula: "Net Margin = Net Income / Revenue × 100",
-    example: "Net Income $18 млн. и приходи $100 млн. дават net margin 18%. Ако приходите растат, но net margin пада, разходите може да изяждат растежа."
-  };
-  if (contains(title, ["ROE"])) return {
-    formula: "ROE = Net Income / Shareholders' Equity × 100",
-    example: "Net Income $10 млрд. и Equity $50 млрд. дават ROE 20%. Проверявай и дълга, защото leverage може да изкриви ROE."
-  };
-  if (contains(title, ["ROIC"])) return {
-    formula: "ROIC = NOPAT / Invested Capital × 100",
-    example: "NOPAT $8 млрд. и invested capital $40 млрд. дават ROIC 20%. Устойчив висок ROIC е знак за качествен бизнес."
-  };
-  if (contains(title, ["ROA"])) return {
-    formula: "ROA = Net Income / Total Assets × 100",
-    example: "Net Income $10 млрд. и Assets $100 млрд. дават ROA 10%. Показва ефективност на активите."
-  };
-  if (contains(title, ["Debt", "Interest Coverage", "Liquidity ratios", "Дълг"])) return {
-    formula: "Net Debt = Total Debt - Cash\nInterest Coverage = EBIT / Interest Expense",
-    example: "Дълг $30 млрд. и кеш $12 млрд. => Net Debt $18 млрд. EBIT $10 млрд. и лихви $1 млрд. => Interest Coverage 10."
-  };
-  if (contains(title, ["RSI"])) return {
-    formula: "RSI = 100 - [100 / (1 + RS)]\nRS = Average Gain / Average Loss",
-    example: "RSI над 70 показва силен импулс или прегряване, а под 30 — силна разпродажба. Не се купува или продава само по RSI."
-  };
-  if (contains(title, ["MACD"])) return {
-    formula: "MACD Line = 12 EMA - 26 EMA\nSignal Line = 9 EMA of MACD\nHistogram = MACD Line - Signal Line",
-    example: "MACD cross нагоре показва подобряващ се momentum, но в sideways market дава много фалшиви сигнали."
-  };
-  if (contains(title, ["Moving averages"])) return {
-    formula: "SMA = Sum of Closing Prices / Number of Periods",
-    example: "Затваряния 100, 102, 101, 105, 107 дават 5-дневна SMA = 103. Цена над 200-дневната средна често показва дългосрочна сила."
-  };
-  if (contains(title, ["ATR"])) return {
-    formula: "True Range = max(High-Low, |High-Previous Close|, |Low-Previous Close|)\nATR = Average True Range",
-    example: "Ако ATR е $5, stop от $1 е твърде тесен и може да бъде ударен от нормален шум."
-  };
-  if (contains(title, ["VWAP"])) return {
-    formula: "VWAP = Sum(Price × Volume) / Sum(Volume)",
-    example: "Институция, която купува под VWAP, получава по-добра средна цена от среднопретеглената цена за деня."
-  };
-  if (contains(title, ["Position sizing", "Risk/reward"])) return {
-    formula: "Position Size = Amount Risked / Stop Loss Distance\nExpected Value = (Win Rate × Average Win) - (Loss Rate × Average Loss)",
-    example: "Портфейл $100,000, риск 1% = $1,000. Stop 5% => позиция $20,000."
-  };
-  if (contains(title, ["Crypto", "Bitcoin", "Ethereum", "Token", "DeFi", "Staking", "Blockchain"])) return {
-    formula: "Crypto Market Cap = Token Price × Circulating Supply\nFDV = Token Price × Max Supply",
-    example: "Токен $2 и 500 млн. circulating supply => Market Cap $1 млрд. Ако max supply е 2 млрд., FDV = $4 млрд. Unlocks могат да натиснат цената."
-  };
-  return {
-    formula: "Professional Framework = Concept + Numbers + Context + Risk Management",
-    example: "Професионалистът не взема решение от една цифра. Той комбинира качество, цена, риск, ликвидност, макро среда и поведение на пазара."
-  };
+  return base[category];
+}
+
+function institutionUse(title: string) {
+  const category = getCategory(title);
+  if (category === "macro") return "Institutions use this topic to determine the market regime: growth, inflation, policy direction, liquidity and credit conditions. They adjust equity exposure, bond duration, currency hedges and sector allocation based on how the macro picture changes.";
+  if (category === "technical" || category === "trading") return "Professional traders use this topic as part of execution and risk control. They look for liquidity, confirmation across timeframes, volatility conditions, order flow and areas where risk can be defined before capital is deployed.";
+  if (category === "crypto") return "Institutions use this topic to assess custody risk, liquidity depth, token supply, regulation, real network activity and whether the asset can fit inside a risk-managed portfolio without operational problems.";
+  if (category === "psychology") return "Institutional teams reduce behavioral mistakes through process: investment committees, pre-defined risk limits, written theses, post-trade reviews and independent challenge of assumptions.";
+  if (category === "video") return "This future video module will be used to translate theory into demonstration: screen recordings, chart annotation, company analysis walkthroughs and step-by-step examples.";
+  if (category === "literature") return "This reading module will be used as a reference system. Professional teams build shared knowledge through reports, books, checklists, models and archived investment cases.";
+  return "Institutions use this topic inside a repeatable research process. They compare the company or asset against history, competitors, valuation, market expectations, liquidity and downside risk before making an allocation.";
+}
+
+function mistakes(title: string) {
+  const category = getCategory(title);
+  if (category === "technical" || category === "trading") return "Beginners often treat a signal as a guaranteed prediction, ignore higher timeframes, place stops in obvious liquidity zones and increase risk after losses.";
+  if (category === "crypto") return "Beginners often buy because of hype, ignore token unlocks, underestimate exchange and custody risk, and confuse a rising price with real adoption.";
+  if (category === "macro") return "Beginners often think one data release explains the entire market, ignore expectations, and fail to separate nominal growth from real growth.";
+  if (category === "fundamental") return "Beginners often focus on one attractive metric, ignore cash flow, overlook debt, compare different sectors incorrectly and forget that valuation depends on growth, margins and interest rates.";
+  if (category === "video") return "The mistake is to watch passively. Video lessons should be used actively: pause, repeat the steps, write notes and apply the process to a real company or chart.";
+  if (category === "literature") return "The mistake is to read without extracting a process. A useful reading system produces notes, checklists, examples and better decisions, not just more information.";
+  return "Beginners often look for simple answers, copy other investors, ignore risk management and make decisions after price already moved strongly.";
+}
+
+function buildLessonSections(lesson: Lesson) {
+  const f = formulaFor(lesson.title);
+  const description = specificDescription(lesson.title);
+  return [
+    { heading: "1. Introduction and Learning Objective", body: `${description} The purpose of this lesson is to make the topic usable in real decisions, not just recognizable as a term. By the end, the student should understand what the concept means, why it matters, which numbers or evidence to check and how to avoid the most common beginner errors.` },
+    { heading: "2. Core Concept Explained from Zero", body: `The central idea behind “${lesson.title.replace(/^Lesson \d+ — /, "")}” is to connect market theory with real economic behavior. Every asset has a story, but professional investors do not invest in stories alone. They ask what drives value, what can be measured, what risk is hidden and whether the current price already reflects the good news. This is the difference between guessing and analysis.` },
+    { heading: "3. Formula, Model or Practical Calculation", body: `${f.formula}\n\n${f.example}\n\nThe formula is not included as decoration. It is a tool for disciplined thinking. Numbers allow comparison across companies, time periods, sectors and market cycles. When a topic does not have one universal formula, the correct professional approach is to build a checklist and use evidence rather than emotion.` },
+    { heading: "4. Real Market Example", body: `Imagine comparing Apple, NVIDIA, Tesla, Berkshire Hathaway, Bitcoin and Ethereum. Each asset can be attractive for a different reason, but the analysis must match the asset. Apple may be evaluated through brand strength, free cash flow and buybacks. NVIDIA may be evaluated through growth, margins and AI demand. Tesla may require analysis of execution risk, competition and valuation. Bitcoin requires scarcity, liquidity, macro demand and custody analysis. Ethereum requires ecosystem usage, staking, fees and developer activity. The lesson topic tells you which lens to use.` },
+    { heading: "5. How Institutions Use It", body: institutionUse(lesson.title) },
+    { heading: "6. Common Beginner Mistakes", body: mistakes(lesson.title) },
+    { heading: "7. Practical Checklist", body: "1. Define the asset or market you are analyzing.\n2. Identify the main driver of value.\n3. Collect at least five facts or numbers.\n4. Compare them with history and competitors.\n5. Define the main risk.\n6. Decide what would prove your thesis wrong.\n7. Size the position according to risk, not excitement." },
+    { heading: "8. Key Takeaways", body: "• A good investment process is repeatable.\n• Price and value are not always the same.\n• One metric is never enough.\n• Risk must be defined before entering.\n• Institutions think in scenarios and probabilities.\n• Beginners improve fastest when they write down their thesis and review it later." },
+    { heading: "9. Homework", body: `Choose one real company, ETF, commodity, currency pair or crypto asset. Apply this lesson to it. Write a short thesis, list the key numbers, define the downside risk and explain what would make you avoid the investment even if the chart looks attractive.` },
+  ];
 }
 
 function visualType(title: string) {
-  if (contains(title, ["Инфлация", "CPI", "Deflation"])) return "inflation";
-  if (contains(title, ["RSI"])) return "rsi";
-  if (contains(title, ["MACD"])) return "macd";
-  if (contains(title, ["Moving averages"])) return "moving";
-  if (contains(title, ["Support", "Resistance", "Breakout"])) return "support";
-  if (contains(title, ["Volume"])) return "volume";
-  if (contains(title, ["Candlestick"])) return "candles";
-  if (contains(title, ["Bitcoin", "Ethereum", "Crypto", "Token", "DeFi", "Blockchain"])) return "crypto";
+  if (has(title, ["Inflation", "CPI", "Deflation"])) return "inflation";
+  if (has(title, ["RSI"])) return "rsi";
+  if (has(title, ["MACD"])) return "macd";
+  if (has(title, ["Moving Averages"])) return "moving";
+  if (has(title, ["Support", "Resistance", "Breakout"])) return "support";
+  if (has(title, ["Bitcoin", "Ethereum", "Crypto", "Token", "DeFi", "Blockchain"])) return "crypto";
   return "valuation";
-}
-
-function buildLesson(lesson: Lesson) {
-  const f = formulaFor(lesson.title);
-  const title = lesson.title;
-  return [
-    {
-      heading: "Въведение и значение",
-      body: `Тази лекция разглежда темата „${title.replace(/Урок \d+ — /, "")}“ като част от професионалната инвестиционна академия. Целта не е да запомниш термин, а да разбереш как този елемент влияе върху реални инвестиционни решения. За начинаещия инвеститор това е важно, защото пазарите не прощават повърхностно мислене. Цената се движи от очаквания, капиталови потоци, риск, ликвидност, лихви, печалби и човешка психология.`
-    },
-    {
-      heading: "Основна концепция",
-      body: `В практиката тази тема се използва, за да оценим дали даден актив е качествен, дали цената му е разумна и какъв риск поемаме. Ако анализираш акция, мисли за реален бизнес с приходи, разходи, конкуренти, мениджмънт, дълг и бъдещи очаквания. Ако анализираш криптовалута, мисли за мрежа, ликвидност, tokenomics, сигурност, adoption и регулаторен риск. Ако анализираш графика, мисли за поведение на купувачи и продавачи, не за магическа линия.`
-    },
-    {
-      heading: "Формула, изчисление или работещ модел",
-      body: `${f.formula}\n\n${f.example}\n\nФормулата не е само математика. Тя е начин да превърнеш впечатленията в проверими числа. Когато можеш да измериш нещо, можеш да го сравниш с миналото, с конкурентите, със сектора и с очакванията на пазара.`
-    },
-    {
-      heading: "Реален пазарен пример",
-      body: `Представи си две компании. Компания A расте с 25% годишно, но няма свободен паричен поток и постоянно издава нови акции. Компания B расте с 10%, но има високи маржове, нисък дълг, стабилен Free Cash Flow и силен brand. Начинаещият често избира Компания A само заради растежа. Професионалният инвеститор сравнява качеството на растежа, цената, риска и устойчивостта. При крипто примерът е подобен: силна цена без ликвидност, utility и контрол върху supply може да бъде просто краткосрочен hype.`
-    },
-    {
-      heading: "Как институциите го използват",
-      body: `Институциите използват тази тема в повторяем процес. Те не купуват, защото някой е казал, че активът е добър. Те изграждат теза, сравняват данни, правят сценарии, изчисляват downside, следят ликвидността и определят размер на позицията. Големите фондове мислят в портфейли, не в единични залози. Дори когато харесват дадена идея, те питат: колко можем да загубим, какво вече е включено в цената и какво би променило тезата?`
-    },
-    {
-      heading: "Чести грешки на начинаещите",
-      body: `1. Гледат само една цифра или един индикатор.\n2. Купуват след силно движение от страх да не изпуснат възможност.\n3. Не проверяват дълг, маржове, cash flow, ликвидност или цикъл.\n4. Бъркат добра компания с добра инвестиция — цената също има значение.\n5. Нямат предварителен план за риск, stop, размер на позицията или времеви хоризонт.`
-    },
-    {
-      heading: "Практическа рамка",
-      body: `Преди да вземеш решение, премини през този процес:\n\n1. Определи дали анализираш бизнес, графика, макро среда или крипто проект.\n2. Събери поне 5 конкретни числа или факта.\n3. Сравни ги с предходни години и с конкуренти.\n4. Определи основния риск.\n5. Определи какво би доказало, че грешиш.\n6. Изчисли разумен размер на позицията.\n7. Не инвестирай само защото цената се движи бързо.`
-    },
-    {
-      heading: "Ключови takeaways",
-      body: `• Пазарната цена не винаги е равна на реалната стойност.\n• Контекстът е толкова важен, колкото и формулата.\n• Един показател никога не е достатъчен.\n• Институциите мислят чрез сценарии и управление на риска.\n• Най-важното умение е да оцелееш достатъчно дълго, за да се възползваш от добрите идеи.`
-    },
-    {
-      heading: "Домашно упражнение и контролни въпроси",
-      body: `Домашно: избери една акция или криптовалута и приложи темата на урока върху нея. Запиши числата, риска, тезата и причината да НЕ инвестираш.\n\nКонтролни въпроси:\n1. Как би обяснил темата на напълно начинаещ?\n2. Кои числа трябва да провериш?\n3. Какво може да се обърка?\n4. Как институция би анализирала същия актив?\n5. Какъв е твоят план, ако тезата се окаже грешна?`
-    },
-  ];
 }
 
 function PracticalVisual({ type }: { type: string }) {
   return (
     <div style={styles.visualCard}>
-      <div style={styles.visualLabel}>Практически визуален пример</div>
+      <div style={styles.visualLabel}>Practical Visual Example</div>
       <svg viewBox="0 0 760 280" width="100%" height="280" role="img">
         <rect x="0" y="0" width="760" height="280" rx="18" fill="rgba(8,20,40,0.96)" />
-        {[45,90,135,180,225].map((y) => <line key={y} x1="45" y1={y} x2="720" y2={y} stroke="rgba(255,255,255,0.08)" />)}
+        {[45, 90, 135, 180, 225].map((y) => <line key={y} x1="45" y1={y} x2="720" y2={y} stroke="rgba(255,255,255,0.08)" />)}
         {type === "inflation" ? (
           <>
             {[["Year 1",120,170,60,"$100"],["Year 2",270,135,95,"$110"],["Year 3",420,95,135,"$125"],["Year 4",570,65,165,"$140"]].map(([label,x,y,h,price]) => (
@@ -442,7 +419,7 @@ function PracticalVisual({ type }: { type: string }) {
         ) : type === "rsi" ? (
           <>
             <rect x="70" y="50" width="620" height="52" fill="rgba(239,68,68,0.22)" /><rect x="70" y="102" width="620" height="105" fill="rgba(148,163,184,0.10)" /><rect x="70" y="207" width="620" height="42" fill="rgba(34,197,94,0.18)" />
-            <text x="85" y="82" fill="#fecaca" fontSize="15" fontWeight="800">RSI над 70: силен импулс / риск от прегряване</text><text x="85" y="155" fill="#dbeafe" fontSize="15" fontWeight="800">RSI 30–70: нормална зона</text><text x="85" y="235" fill="#86efac" fontSize="15" fontWeight="800">RSI под 30: oversold зона</text>
+            <text x="85" y="82" fill="#fecaca" fontSize="15" fontWeight="800">RSI above 70: strong momentum / overheating risk</text><text x="85" y="155" fill="#dbeafe" fontSize="15" fontWeight="800">RSI 30–70: normal zone</text><text x="85" y="235" fill="#86efac" fontSize="15" fontWeight="800">RSI below 30: oversold zone</text>
             <polyline fill="none" stroke="#38bdf8" strokeWidth="4" strokeLinecap="round" points="80,190 140,172 205,130 265,82 330,118 390,147 455,108 515,76 580,124 650,156 700,134" />
           </>
         ) : type === "macd" ? (
@@ -477,7 +454,7 @@ export default function EducationPage() {
   const [plan, setPlan] = useState<PlanType>("loading");
   const [selectedLesson, setSelectedLesson] = useState<Lesson>(lessons[0]);
   const [openLevel, setOpenLevel] = useState<string>(levelNames[0]);
-  const content = useMemo(() => buildLesson(selectedLesson), [selectedLesson]);
+  const content = useMemo(() => buildLessonSections(selectedLesson), [selectedLesson]);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -502,8 +479,8 @@ export default function EducationPage() {
 
         <div style={styles.layout}>
           <aside style={styles.sidebar}>
-            <h1 style={styles.sidebarTitle}>Пълна инвестиционна академия</h1>
-            <p style={styles.sidebarSubtitle}>Структура от абсолютен начинаещ до професионален инвеститор и трейдър.</p>
+            <h1 style={styles.sidebarTitle}>Complete Investment Academy</h1>
+            <p style={styles.sidebarSubtitle}>A structured path from absolute beginner to professional investor and trader.</p>
 
             <div style={styles.levelList}>
               {levelNames.map((level) => {
@@ -515,10 +492,10 @@ export default function EducationPage() {
                     </button>
                     {isOpen ? (
                       <div style={styles.lessonsWrap}>
-                        <p style={styles.levelSubtitle}>{LEVEL_DESCRIPTIONS[level] || "Професионална секция от академията."}</p>
+                        <p style={styles.levelSubtitle}>{LEVEL_DESCRIPTIONS[level] || "Professional academy section."}</p>
                         {grouped[level].map((lesson) => (
                           <button key={lesson.id} style={{...styles.lessonButton, ...(selectedLesson.id === lesson.id ? styles.lessonButtonActive : {})}} onClick={() => setSelectedLesson(lesson)}>
-                            {lesson.title}
+                            Lesson {lesson.id} — {lesson.title}
                           </button>
                         ))}
                       </div>
@@ -528,9 +505,9 @@ export default function EducationPage() {
               })}
 
               <div style={styles.levelBlock}>
-                <button style={styles.levelButton}><span>ФИНАЛНО ДИПЛОМИРАНЕ</span><span>✓</span></button>
+                <button style={styles.levelButton}><span>FINAL GRADUATION</span><span>✓</span></button>
                 <div style={styles.lessonsWrap}>
-                  {["Анализ на публична компания","Изграждане на инвестиционен портфейл","Макро анализ на пазарите","Технически анализ на реална графика","Управление на риск при криза","Crypto research report","Собствена trading стратегия","Institutional investment thesis","Пълен професионален инвестиционен план"].map((exam, index) => <div key={exam} style={styles.examItem}>Финален изпит {index + 1} — {exam}</div>)}
+                  {["Public company analysis","Investment portfolio construction","Macro market analysis","Technical analysis of a real chart","Risk management during crisis","Crypto research report","Personal trading strategy","Institutional investment thesis","Complete professional investment plan"].map((exam, index) => <div key={exam} style={styles.examItem}>Final Exam {index + 1} — {exam}</div>)}
                 </div>
               </div>
             </div>
@@ -538,7 +515,7 @@ export default function EducationPage() {
 
           <section style={styles.contentCard}>
             <div style={styles.lessonMeta}>{selectedLesson.level}</div>
-            <h1 style={styles.lessonTitle}>{selectedLesson.title}</h1>
+            <h1 style={styles.lessonTitle}>Lesson {selectedLesson.id} — {selectedLesson.title}</h1>
             <PracticalVisual type={visualType(selectedLesson.title)} />
 
             <div style={styles.sectionsWrap}>
