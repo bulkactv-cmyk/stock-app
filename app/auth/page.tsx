@@ -24,7 +24,7 @@ export default function AuthPage() {
       return;
     }
 
-    alert("Регистрацията е успешна. Сега влез с имейла и паролата.");
+    alert("Registration successful. Now log in with your email and password.");
     setLoading(false);
   };
 
@@ -52,7 +52,7 @@ export default function AuthPage() {
       console.log("Insert error:", insertError.message);
     }
 
-    alert("Влезе успешно!");
+    alert("Successfully logged in!");
     window.location.href = "/";
 
     setLoading(false);
@@ -61,12 +61,12 @@ export default function AuthPage() {
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <h1 style={styles.title}>Добре дошъл</h1>
-        <p style={styles.subtitle}>Влез или създай акаунт</p>
+        <h1 style={styles.title}>Welcome</h1>
+        <p style={styles.subtitle}>Sign in or create an account</p>
 
         <input
           type="email"
-          placeholder="Имейл"
+          placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           style={styles.input}
@@ -74,19 +74,27 @@ export default function AuthPage() {
 
         <input
           type="password"
-          placeholder="Парола"
+          placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           style={styles.input}
         />
 
         <div style={styles.buttons}>
-          <button onClick={signUp} disabled={loading} style={styles.secondaryBtn}>
-            Регистрация
+          <button
+            onClick={signUp}
+            disabled={loading}
+            style={styles.secondaryBtn}
+          >
+            Sign Up
           </button>
 
-          <button onClick={signIn} disabled={loading} style={styles.primaryBtn}>
-            Вход
+          <button
+            onClick={signIn}
+            disabled={loading}
+            style={styles.primaryBtn}
+          >
+            Login
           </button>
         </div>
       </div>
