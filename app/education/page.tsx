@@ -30,7 +30,7 @@ type Lesson = {
 
 const lessons: Lesson[] = [
   {
-    title: "1. What is a stock and what is it used for?",
+    title: "1. Stock Ownership and Shareholder Rights",
     category: "core",
     visual: "stock",
     content: `
@@ -80,7 +80,7 @@ The better you understand the business, the better investor you become.
 `,
   },
   {
-    title: "2. What moves stock prices?",
+    title: "2. Stock Price Drivers",
     category: "core",
     visual: "valuation",
     content: `
@@ -132,7 +132,7 @@ The strongest moves happen when earnings grow and the market is willing to pay a
 `,
   },
   {
-    title: "3. How does company growth affect the economy?",
+    title: "3. Company Growth and Economic Impact",
     category: "core",
     content: `
 Company growth affects the economy because businesses create jobs, pay taxes, produce goods and invest in innovation.
@@ -169,7 +169,7 @@ They influence employment, innovation, consumption, tax revenue and capital mark
 `,
   },
   {
-    title: "4. Which metrics are used to analyze a company?",
+    title: "4. Core Company Analysis Metrics",
     category: "core",
     content: `
 Professional investors do not analyze a company using only one number.
@@ -703,7 +703,7 @@ business quality + growth + valuation + risk.
 `,
   },
   {
-    title: "12. How to perform fundamental analysis",
+    title: "12. Fundamental Analysis Process",
     category: "core",
     content: `
 Professional fundamental analysis process:
@@ -754,7 +754,7 @@ Buy strong companies when market price is below or near fair value.
 `,
   },
   {
-    title: "13. What is technical analysis and how is it used?",
+    title: "13. Technical Analysis Framework",
     category: "technical",
     visual: "supportResistance",
     content: `
@@ -794,7 +794,7 @@ A professional investor may wait for technical confirmation before entering.
 `,
   },
   {
-    title: "14. What is fundamental analysis and how is it used?",
+    title: "14. Fundamental Analysis Framework",
     category: "core",
     visual: "valuation",
     content: `
@@ -832,7 +832,7 @@ Professional use:
 `,
   },
   {
-    title: "15. What is inflation and how does it affect markets?",
+    title: "15. Inflation and Market Impact",
     category: "macro",
     visual: "inflation",
     content: `
@@ -875,7 +875,7 @@ It changes interest rates, valuations, liquidity and investor behavior.
 `,
   },
   {
-    title: "16. What is deflation and how does it affect markets?",
+    title: "16. Deflation and Market Impact",
     category: "macro",
     content: `
 Deflation means prices fall over time.
@@ -912,7 +912,7 @@ Short-term lower prices may look good for consumers, but long-term deflation can
 `,
   },
   {
-    title: "17. What is cryptocurrency and why does it exist?",
+    title: "17. Cryptocurrency, Blockchain and Digital Assets",
     category: "crypto",
     visual: "crypto",
     content: `
@@ -953,7 +953,7 @@ It includes many sectors:
 `,
   },
   {
-    title: "18. What to check before buying a cryptocurrency?",
+    title: "18. Crypto Research Checklist Before Buying",
     category: "crypto",
     content: `
 Before buying crypto, analyze risk carefully.
@@ -1016,7 +1016,7 @@ In crypto, risk management is more important than prediction.
 `,
   },
   {
-    title: "19. What are interest rates and why do they matter?",
+    title: "19. Interest Rates and Asset Valuation",
     category: "macro",
     content: `
 Interest rates are the cost of borrowing money.
@@ -1044,7 +1044,7 @@ Rates influence valuation, liquidity and institutional positioning.
 `,
   },
   {
-    title: "20. What is a recession?",
+    title: "20. Recession, Earnings Risk and Defensive Positioning",
     category: "macro",
     content: `
 A recession is a period of economic decline.
@@ -1079,7 +1079,7 @@ Strong companies can become attractive when fear is extreme.
 `,
   },
   {
-    title: "21. What is liquidity in financial markets?",
+    title: "21. Market Liquidity and Risk Appetite",
     category: "macro",
     content: `
 Liquidity means how easily assets can be bought or sold without moving price too much.
@@ -1744,46 +1744,69 @@ Is this a high-quality company with durable competitive advantages, and is the c
     title: "33. Video Lessons - Coming Soon",
     category: "video",
     content: `
-This section is prepared for future video lessons.
+This section is reserved for future video education. It should not be treated as a completed investment lesson yet.
 
-Planned video topics:
-- How to read stock charts
-- How to analyze financial statements
-- How to use RSI and MACD
-- How to build a watchlist
-- How to manage risk
-- How to analyze crypto projects
-- How to combine technical and fundamental analysis
+Purpose of this module:
+The video section will be used for practical screen-recorded lessons where users can see charts, financial statements, indicators and portfolio decisions visually instead of only reading text.
+
+Planned video curriculum:
+1. Reading a stock chart from zero
+Users will learn price candles, trend direction, support, resistance, volume and basic chart navigation.
+
+2. Reading financial statements
+Users will see where revenue, net income, assets, liabilities, cash flow and debt appear in real company reports.
+
+3. Using valuation ratios correctly
+The lesson will compare P/E, P/S, EV/EBITDA, PEG and FCF Yield on real examples.
+
+4. Combining fundamental and technical analysis
+The goal will be to show how a fundamentally strong company can still require technical timing and risk control.
+
+5. Risk management in practice
+The video will demonstrate position sizing, stop levels, portfolio exposure and scenario planning.
 
 Future structure:
-1. Short video explanation
-2. Practical chart example
-3. Checklist
-4. Quiz
-5. Case study
+- short concept explanation
+- practical screen example
+- formula or checklist
+- common mistakes
+- professional summary
 `,
   },
   {
     title: "34. Reading Library - Coming Soon",
     category: "library",
     content: `
-This section is prepared for future reading materials.
+This section is reserved for future reading resources, checklists and investor reference materials.
 
-Planned library topics:
-- Beginner investing guide
-- Financial statement guide
-- Valuation guide
-- Risk management checklist
-- Macro investing notes
-- Crypto research checklist
-- Trading psychology notes
+Purpose of this module:
+The reading library will organize longer educational materials that users can return to when they analyze companies, crypto assets, macro data or risk decisions.
+
+Planned library sections:
+1. Beginner investing guide
+A structured guide explaining stocks, ETFs, diversification, compounding, risk and long-term portfolio thinking.
+
+2. Financial statement guide
+A practical reference for income statements, balance sheets and cash flow statements.
+
+3. Valuation guide
+A formula-based guide for P/E, P/S, PEG, EV/EBITDA, FCF Yield, intrinsic value and margin of safety.
+
+4. Risk management checklist
+A checklist covering position size, portfolio concentration, stop levels, liquidity, volatility and emotional discipline.
+
+5. Crypto research checklist
+A framework for token supply, unlock schedules, liquidity, utility, team quality, security and market narrative.
+
+6. Trading psychology notes
+A practical section on overtrading, fear of missing out, revenge trading, confirmation bias and patience.
 
 Future structure:
-1. Article
-2. Formula examples
-3. Practical checklist
-4. Investor mistakes
-5. Professional summary
+- detailed article
+- formulas and examples
+- checklist
+- beginner mistakes
+- professional summary
 `,
   },
 ];
@@ -1822,11 +1845,6 @@ const categories: { key: LessonCategory; label: string; description: string }[] 
 ];
 
 
-type StructuredLessonSection = {
-  heading: string;
-  body: string;
-};
-
 function normalizeLessonBody(content: string) {
   return content
     .trim()
@@ -1834,284 +1852,90 @@ function normalizeLessonBody(content: string) {
     .replace(/[ \t]+\n/g, "\n");
 }
 
-function getWhatItIs(lesson: Lesson) {
-  const title = lesson.title.toLowerCase();
-
-  if (title.includes("economic moat")) {
-    return `Economic moat means business protection. It describes the durable competitive advantage that prevents competitors from easily taking a company's customers, profits, market share or pricing power. The word "moat" comes from the protective water around a castle. In investing, the "castle" is the business and the "moat" is the protection around that business.`;
-  }
-
-  if (title.includes("stock")) {
-    return `A stock is an ownership share in a real company. When an investor buys a stock, the investor owns a small part of that business and participates in its future value creation, risk and potential shareholder returns.`;
-  }
-
-  if (title.includes("technical analysis")) {
-    return `Technical analysis is the study of price, volume, trend and chart behavior. It focuses on what the market is doing now instead of only asking what the business is worth.`;
-  }
-
-  if (title.includes("fundamental analysis")) {
-    return `Fundamental analysis is the process of estimating the real economic value of a company or asset by studying revenue, earnings, margins, cash flow, debt, valuation, competitive position and future growth.`;
-  }
-
-  if (title.includes("inflation")) {
-    return `Inflation is the rate at which prices for goods and services rise over time. It reduces purchasing power because the same amount of money buys fewer goods in the future.`;
-  }
-
-  if (title.includes("deflation")) {
-    return `Deflation is the opposite of inflation. It means prices fall over time, usually because demand is weak, credit is contracting, or the economy is slowing.`;
-  }
-
-  if (title.includes("cryptocurrency")) {
-    return `Cryptocurrency is a digital asset secured by cryptography and usually recorded on a blockchain. It can be used for payments, decentralized applications, digital ownership, settlement, speculation or store-of-value narratives.`;
-  }
-
-  if (title.includes("rsi")) {
-    return `RSI, or Relative Strength Index, is a momentum indicator that measures how strong recent price movement is on a scale from 0 to 100.`;
-  }
-
-  if (title.includes("macd")) {
-    return `MACD is a trend and momentum indicator that compares short-term and medium-term exponential moving averages to show whether momentum is improving or weakening.`;
-  }
-
-  if (title.includes("moving average")) {
-    return `A moving average is a smoothed line based on past prices. It helps investors and traders understand trend direction without reacting to every small price movement.`;
-  }
-
-  if (title.includes("bollinger")) {
-    return `Bollinger Bands are a volatility tool built around a moving average. They show when price is trading near the upper or lower part of its recent volatility range.`;
-  }
-
-  if (title.includes("volume")) {
-    return `Volume shows how much of an asset was traded during a specific period. It helps confirm whether a price move has real participation behind it.`;
-  }
-
-  if (title.includes("support")) {
-    return `Support and resistance are price zones where buyers or sellers have historically reacted. They are not exact lines, but areas where market behavior often changes.`;
-  }
-
-  if (title.includes("candlestick")) {
-    return `Candlesticks are chart candles that show the open, high, low and closing price for a period. They help visualize the battle between buyers and sellers.`;
-  }
-
-  if (title.includes("trend lines")) {
-    return `Market structure describes whether price is forming higher highs and higher lows, lower highs and lower lows, or moving sideways. Trend lines help visualize that structure.`;
-  }
-
-  if (title.includes("risk")) {
-    return `Risk management is the process of protecting capital from large losses. It defines how much to invest, how much to risk and when a trade or investment thesis is invalid.`;
-  }
-
-  if (title.includes("interest rates")) {
-    return `Interest rates are the cost of money. They influence borrowing, lending, valuation, liquidity, consumer spending and institutional capital allocation.`;
-  }
-
-  if (title.includes("recession")) {
-    return `A recession is a broad economic slowdown where growth weakens, unemployment rises, profits decline and credit conditions usually become tighter.`;
-  }
-
-  if (title.includes("liquidity")) {
-    return `Liquidity means how easily money moves through the financial system and how easily assets can be bought or sold without strongly moving the price.`;
-  }
-
-  return `This lesson explains an important investing concept used to analyze companies, markets, valuation, risk or investor behavior. The goal is to understand the concept clearly before using it in real decisions.`;
+function splitLessonBody(content: string) {
+  return normalizeLessonBody(content)
+    .split("\n\n")
+    .map((block) => block.trim())
+    .filter(Boolean);
 }
 
-function getUsedFor(lesson: Lesson) {
-  switch (lesson.category) {
-    case "core":
-      return `It is used to analyze business quality, estimate value, compare companies, decide whether a stock is attractive and avoid buying weak businesses only because the price looks cheap.`;
-    case "macro":
-      return `It is used to understand the economic environment behind market movements. Professional investors use macro data to judge liquidity, interest-rate pressure, earnings risk and risk appetite.`;
-    case "crypto":
-      return `It is used to evaluate digital assets, separate real projects from speculation, understand token risk and avoid buying crypto only because of hype or social media momentum.`;
-    case "technical":
-      return `It is used to time entries and exits, identify trend direction, confirm momentum, define risk levels and avoid buying blindly without understanding market structure.`;
-    case "video":
-      return `This section is prepared for future video lessons where the same concepts can be explained visually with screen recordings, charts and practical examples.`;
-    case "library":
-      return `This section is prepared for future reading materials, checklists, investor notes and downloadable educational resources.`;
-    default:
-      return `It is used as part of a structured investment process.`;
-  }
-}
-
-function getWhyImportant(lesson: Lesson) {
-  const title = lesson.title.toLowerCase();
-
-  if (title.includes("economic moat")) {
-    return `It is important because long-term investment returns often come from companies that can protect high margins and high returns on capital for many years. Without protection, competitors usually enter the market, reduce prices and destroy excess profits.`;
-  }
-
-  if (title.includes("risk")) {
-    return `It is important because even a good analysis can be wrong. Investors who do not control risk can lose too much capital before their long-term strategy has time to work.`;
-  }
-
-  if (title.includes("liquidity") || title.includes("interest rates") || title.includes("inflation")) {
-    return `It is important because liquidity and rates influence almost every asset class: stocks, bonds, crypto, real estate, commodities and currencies. A strong company can still fall when macro conditions tighten.`;
-  }
-
-  if (lesson.category === "technical") {
-    return `It is important because price does not always move immediately after good or bad news. Technical tools help investors see whether the market is confirming or rejecting a thesis.`;
-  }
-
-  if (lesson.category === "crypto") {
-    return `It is important because crypto markets are highly volatile and often speculative. A structured checklist reduces the risk of buying weak projects, illiquid tokens or unsustainable narratives.`;
-  }
-
-  return `It is important because professional investors do not make decisions from one number. They combine business quality, growth, valuation, balance sheet strength, market conditions and risk management.`;
-}
-
-function getHowItWorks(lesson: Lesson) {
-  return normalizeLessonBody(lesson.content);
-}
-
-function getRealExample(lesson: Lesson) {
-  const title = lesson.title.toLowerCase();
-
-  if (title.includes("economic moat")) {
-    return `Example: Apple can sell premium devices because customers trust the brand and stay inside the ecosystem. If a competitor offers a cheaper phone, many Apple users still remain because they use iCloud, App Store, Apple Watch, MacBook and other connected services. That loyalty protects revenue and margins.`;
-  }
-
-  if (title.includes("revenue") || title.includes("eps") || title.includes("p/e")) {
-    return `Example: If a company has EPS of $5 and trades at $100, the P/E ratio is 100 / 5 = 20. If EPS grows to $6 and the P/E stays 20, the implied price becomes 6 × 20 = $120. That is a 20% price increase driven by earnings growth.`;
-  }
-
-  if (title.includes("margins")) {
-    return `Example: If revenue is $100M and net income is $18M, net margin is 18M / 100M × 100 = 18%. If next year revenue rises to $120M but net income stays $18M, net margin falls to 15%. Revenue grew, but profitability weakened.`;
-  }
-
-  if (title.includes("rsi")) {
-    return `Example: If a stock rises quickly and RSI reaches 78, it may be extended. But if the stock is in a strong uptrend, RSI can remain elevated for weeks. A professional does not sell only because RSI is above 70; they also check trend, volume and support.`;
-  }
-
-  if (title.includes("support")) {
-    return `Example: If Bitcoin bounces several times near $90,000, that area becomes support. If price later breaks below $90,000 with high volume, the old support may become resistance.`;
-  }
-
-  if (title.includes("inflation")) {
-    return `Example: If a basket of goods costs $1,000 this year and $1,080 next year, inflation is (1,080 - 1,000) / 1,000 × 100 = 8%. If wages grow only 4%, real purchasing power falls.`;
-  }
-
-  if (title.includes("crypto")) {
-    return `Example: A token trades at $2 with 500M circulating supply. Market cap = 2 × 500M = $1B. If another 500M tokens unlock next year, investors must understand whether demand can absorb the new supply.`;
-  }
-
-  return `Example: A professional investor compares two companies in the same sector. Company A has higher growth but weak cash flow. Company B grows slower but has strong margins, low debt and high return on capital. The better investment depends on quality, price and risk, not only growth.`;
-}
-
-function getInstitutionalUse(lesson: Lesson) {
-  const title = lesson.title.toLowerCase();
-
-  if (title.includes("economic moat")) {
-    return `Institutional investors use moat analysis to identify companies that can defend profits across economic cycles. They look for persistent high ROIC, stable or rising margins, pricing power, market share stability, recurring revenue and customer loyalty.`;
-  }
-
-  if (lesson.category === "technical") {
-    return `Institutions often use this together with liquidity, order flow, volatility, volume and higher-timeframe trend. They rarely rely on one indicator alone; they use it as confirmation inside a broader risk framework.`;
-  }
-
-  if (lesson.category === "macro") {
-    return `Institutions use this to adjust portfolio exposure. In tight monetary conditions they may reduce speculative assets; in improving liquidity conditions they may increase exposure to equities, credit or crypto.`;
-  }
-
-  if (lesson.category === "crypto") {
-    return `Institutions focus on liquidity, custody, regulation, token supply, exchange listings, unlock schedules, security, adoption and whether the asset has a real reason to exist beyond speculation.`;
-  }
-
-  return `Institutions use this inside a repeatable research process. They compare historical data, sector peers, analyst expectations, valuation ranges, management guidance and macro risk before allocating capital.`;
-}
-
-function getBeginnerMistakes(lesson: Lesson) {
-  const title = lesson.title.toLowerCase();
-
-  if (title.includes("economic moat")) {
-    return `Beginners often confuse popularity with a real moat. A company can be popular today but still have weak protection. A real moat must show up in the numbers through margins, return on capital, customer retention, pricing power or durable market share.`;
-  }
-
-  if (title.includes("p/e")) {
-    return `Beginners often think low P/E automatically means cheap and high P/E automatically means expensive. This is wrong. Valuation must be judged against growth, margins, debt, cash flow and business quality.`;
-  }
-
-  if (lesson.category === "technical") {
-    return `Beginners often use indicators as buy or sell signals without context. An indicator is not a prediction machine. It must be combined with trend, volume, support/resistance and risk control.`;
-  }
-
-  if (lesson.category === "macro") {
-    return `Beginners often ignore macro conditions and analyze assets in isolation. In reality, interest rates, liquidity and inflation can change valuations even when the company itself remains strong.`;
-  }
-
-  if (lesson.category === "crypto") {
-    return `Beginners often buy because of hype, influencer posts or a fast-rising price. They forget to check supply, unlocks, liquidity, security, real usage and whether insiders may be selling into public demand.`;
-  }
-
-  return `Beginners often focus on one attractive number and ignore the full picture. Professional analysis requires context: business model, financial quality, valuation, market cycle and risk.`;
-}
-
-function buildStructuredLesson(lesson: Lesson): StructuredLessonSection[] {
-  return [
-    {
-      heading: "What it is",
-      body: getWhatItIs(lesson),
-    },
-    {
-      heading: "What it is used for",
-      body: getUsedFor(lesson),
-    },
-    {
-      heading: "Why it matters",
-      body: getWhyImportant(lesson),
-    },
-    {
-      heading: "How it works / how it is calculated",
-      body: getHowItWorks(lesson),
-    },
-    {
-      heading: "Real example",
-      body: getRealExample(lesson),
-    },
-    {
-      heading: "How institutions use it",
-      body: getInstitutionalUse(lesson),
-    },
-    {
-      heading: "What beginners usually get wrong",
-      body: getBeginnerMistakes(lesson),
-    },
+function isSectionHeading(block: string) {
+  const clean = block.trim();
+  if (!clean) return false;
+  if (clean.length > 80) return false;
+  if (clean.includes("=") || clean.includes("/")) return false;
+  if (/^\d+[.)]/.test(clean)) return false;
+  if (clean.endsWith(":")) return true;
+  const knownHeadings = [
+    "Definition",
+    "Purpose",
+    "Institutional use",
+    "Professional interpretation",
+    "Professional workflow",
+    "Professional lesson",
+    "Formula",
+    "Example",
+    "Real example",
+    "Calculation example",
+    "Common beginner mistakes",
+    "Correct use",
+    "Market impact",
+    "Main drivers",
+    "Key items",
+    "Future structure",
+    "Planned video curriculum",
+    "Planned library sections",
   ];
+  return knownHeadings.includes(clean);
 }
 
-function LessonContent({ sections }: { sections: StructuredLessonSection[] }) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
-      {sections.map((section) => (
-        <section key={section.heading}>
-          <h2
-            style={{
-              color: "white",
-              fontSize: "22px",
-              lineHeight: 1.25,
-              margin: "0 0 8px",
-              fontWeight: 900,
-            }}
-          >
-            {section.heading}
-          </h2>
+function LessonContent({ content }: { content: string }) {
+  const blocks = splitLessonBody(content);
 
-          <div
-            style={{
-              color: "#dbeafe",
-              fontSize: "17px",
-              lineHeight: 1.48,
-              whiteSpace: "pre-line",
-            }}
-          >
-            {section.body}
+  return (
+    <div style={styles.lessonTextWrap}>
+      {blocks.map((block, index) => {
+        const heading = isSectionHeading(block);
+
+        if (heading) {
+          return (
+            <h2 key={`${block}-${index}`} style={styles.lessonSubheading}>
+              {block.replace(/:$/, "")}
+            </h2>
+          );
+        }
+
+        return (
+          <div key={`${block}-${index}`} style={styles.lessonParagraph}>
+            {block}
           </div>
-        </section>
-      ))}
+        );
+      })}
     </div>
   );
 }
+
+
+const styles: Record<string, React.CSSProperties> = {
+  lessonTextWrap: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+  },
+  lessonSubheading: {
+    color: "white",
+    fontSize: "22px",
+    lineHeight: 1.22,
+    margin: "16px 0 2px",
+    fontWeight: 900,
+  },
+  lessonParagraph: {
+    color: "#dbeafe",
+    fontSize: "17px",
+    lineHeight: 1.42,
+    whiteSpace: "pre-line",
+  },
+};
 
 
 function ChartVisual({ type }: { type: VisualType }) {
@@ -2428,8 +2252,6 @@ export default function EducationPage() {
   const [selectedLesson, setSelectedLesson] = useState<Lesson>(lessons[0]);
   const [openCategory, setOpenCategory] = useState<LessonCategory>("core");
 
-  const structuredLesson = useMemo(() => buildStructuredLesson(selectedLesson), [selectedLesson]);
-
   useEffect(() => {
     const loadUser = async () => {
       const {
@@ -2658,7 +2480,7 @@ export default function EducationPage() {
 
             {selectedLesson.visual ? <ChartVisual type={selectedLesson.visual} /> : null}
 
-            <LessonContent sections={structuredLesson} />
+            <LessonContent content={selectedLesson.content} />
           </section>
         </div>
       </div>
