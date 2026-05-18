@@ -226,6 +226,92 @@ const KNOWN_CRYPTO_SYMBOLS = new Set([
   "PEPE",
 ]);
 
+const FALLBACK_OVERVIEW: MarketOverviewResponse = {
+  stocks: [
+    {
+      symbol: "AAPL",
+      name: "Apple Inc.",
+      logoUrl: "https://www.google.com/s2/favicons?domain=apple.com&sz=128",
+      price: 171.06,
+      change: -1.24,
+      changePercent: -0.72,
+      sparkline: buildForcedSparkline(171.06, -0.72, 20),
+    },
+    {
+      symbol: "MSFT",
+      name: "Microsoft Corp.",
+      logoUrl: "https://www.google.com/s2/favicons?domain=microsoft.com&sz=128",
+      price: 425.52,
+      change: 2.18,
+      changePercent: 0.51,
+      sparkline: buildForcedSparkline(425.52, 0.51, 20),
+    },
+    {
+      symbol: "NVDA",
+      name: "NVIDIA Corp.",
+      logoUrl: "https://www.google.com/s2/favicons?domain=nvidia.com&sz=128",
+      price: 910.24,
+      change: 8.42,
+      changePercent: 0.93,
+      sparkline: buildForcedSparkline(910.24, 0.93, 20),
+    },
+    {
+      symbol: "TSLA",
+      name: "Tesla Inc.",
+      logoUrl: "https://www.google.com/s2/favicons?domain=tesla.com&sz=128",
+      price: 184.86,
+      change: -3.12,
+      changePercent: -1.66,
+      sparkline: buildForcedSparkline(184.86, -1.66, 20),
+    },
+  ],
+  cryptos: [
+    {
+      symbol: "BTC",
+      name: "Bitcoin",
+      logoUrl: "https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/btc.png",
+      price: 67240.12,
+      changePercent: 1.34,
+      sparkline: buildForcedSparkline(67240.12, 1.34, 20),
+    },
+    {
+      symbol: "ETH",
+      name: "Ethereum",
+      logoUrl: "https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/eth.png",
+      price: 3518.44,
+      changePercent: 0.86,
+      sparkline: buildForcedSparkline(3518.44, 0.86, 20),
+    },
+    {
+      symbol: "SOL",
+      name: "Solana",
+      logoUrl: "https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/sol.png",
+      price: 148.25,
+      changePercent: -2.15,
+      sparkline: buildForcedSparkline(148.25, -2.15, 20),
+    },
+    {
+      symbol: "BNB",
+      name: "BNB",
+      logoUrl: "https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/bnb.png",
+      price: 586.72,
+      changePercent: 0.42,
+      sparkline: buildForcedSparkline(586.72, 0.42, 20),
+    },
+  ],
+};
+
+function withFallbackOverview(data?: Partial<MarketOverviewResponse> | null): MarketOverviewResponse {
+  const stocks = Array.isArray(data?.stocks) && data.stocks.length > 0 ? data.stocks : FALLBACK_OVERVIEW.stocks;
+  const cryptos = Array.isArray(data?.cryptos) && data.cryptos.length > 0 ? data.cryptos : FALLBACK_OVERVIEW.cryptos;
+
+  return {
+    stocks,
+    cryptos,
+    updatedAt: data?.updatedAt || new Date().toISOString(),
+  };
+}
+
 function formatLargeNumber(value: number | null | undefined) {
   if (value === null || value === undefined || Number.isNaN(value)) return "No data";
   if (value >= 1_000_000_000_000) return `${(value / 1_000_000_000_000).toFixed(2)}T`;
@@ -573,6 +659,12 @@ function MarketOverviewCard({
       </div>
 
       <div style={styles.marketList}>
+        {items.length === 0 ? (
+          <div style={styles.marketEmptyState}>
+            Market data is loading. If the live API is unavailable, fallback assets will appear automatically.
+          </div>
+        ) : null}
+
         {items.map((item, index) => {
           const positive = (item.changePercent ?? 0) >= 0;
 
@@ -837,7 +929,7 @@ function AlertsCard({
                   <div>
                     <div style={styles.alertSymbol}>{alert.symbol}</div>
                     <div style={styles.alertCondition}>
-                      {alert.conditionType === "above" ? "Над" : "Под"}{" "}
+                      {alert.conditionType === "above" ? "Above" : "Below"}{" "}
                       {formatMarketPrice(alert.targetPrice)}
                     </div>
                   </div>
@@ -850,7 +942,7 @@ function AlertsCard({
                         : styles.alertStatusPending),
                     }}
                   >
-                    {triggered ? "Triggered" : "Assetен"}
+                    {triggered ? "Triggered" : "Pending"}
                   </div>
                 </div>
 
@@ -1053,10 +1145,7 @@ export default function DashboardPage() {
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [stockResult, setStockResult] = useState<StockResult | null>(null);
-  const [overview, setOverview] = useState<MarketOverviewResponse>({
-    stocks: [],
-    cryptos: [],
-  });
+  const [overview, setOverview] = useState<MarketOverviewResponse>(FALLBACK_OVERVIEW);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [hoveredNav, setHoveredNav] = useState("");
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
@@ -1363,6 +1452,11 @@ export default function DashboardPage() {
 
         if (!res.ok || data?.error) {
           console.error("Market overview error:", data?.error || "Unknown error");
+
+          if (isMounted) {
+            setOverview(FALLBACK_OVERVIEW);
+          }
+
           return;
         }
 
@@ -1375,13 +1469,14 @@ export default function DashboardPage() {
             ? data.cryptos.map(normalizeOverviewItem)
             : [];
 
-          setOverview({
-            stocks,
-            cryptos,
-          });
+          setOverview(withFallbackOverview({ stocks, cryptos, updatedAt: data?.updatedAt }));
         }
       } catch (error) {
         console.error("Market overview fetch error:", error);
+
+        if (isMounted) {
+          setOverview(FALLBACK_OVERVIEW);
+        }
       }
     };
 
@@ -1422,7 +1517,7 @@ export default function DashboardPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data?.error || "Error при добавяне в watchlist.");
+        alert(data?.error || "Error adding to watchlist.");
         return;
       }
 
@@ -1442,7 +1537,7 @@ export default function DashboardPage() {
       });
     } catch (error) {
       console.error("WATCHLIST ADD ERROR:", error);
-      alert("Error при добавяне в watchlist.");
+      alert("Error adding to watchlist.");
     }
   };
 
@@ -1459,14 +1554,14 @@ export default function DashboardPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data?.error || "Error при премахване от watchlist.");
+        alert(data?.error || "Error removing from watchlist.");
         return;
       }
 
       setWatchlist((prev) => prev.filter((item) => item.symbol !== symbol));
     } catch (error) {
       console.error("WATCHLIST DELETE ERROR:", error);
-      alert("Error при премахване от watchlist.");
+      alert("Error removing from watchlist.");
     }
   };
 
@@ -1517,7 +1612,7 @@ export default function DashboardPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data?.error || "Error при създаване на alert.");
+        alert(data?.error || "Error creating alert.");
         return;
       }
 
@@ -1527,7 +1622,7 @@ export default function DashboardPage() {
       setAlertConditionType("above");
     } catch (error) {
       console.error("CREATE ALERT ERROR:", error);
-      alert("Error при създаване на alert.");
+      alert("Error creating alert.");
     }
   };
 
@@ -1544,14 +1639,14 @@ export default function DashboardPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data?.error || "Error при изтриване на alert.");
+        alert(data?.error || "Error deleting alert.");
         return;
       }
 
       setAlerts((prev) => prev.filter((item) => item.id !== id));
     } catch (error) {
       console.error("DELETE ALERT ERROR:", error);
-      alert("Error при изтриване на alert.");
+      alert("Error deleting alert.");
     }
   };
 
@@ -2123,7 +2218,7 @@ export default function DashboardPage() {
                       <div style={styles.aiTitle}>AI Analysis</div>
 
                       <p style={styles.aiText}>
-                        {stockResult.aiAnalysis?.summary || "Няма AI Analysis"}
+                        {stockResult.aiAnalysis?.summary || "No AI analysis available"}
                       </p>
 
                       <div style={styles.aiColumns}>
@@ -2274,7 +2369,7 @@ export default function DashboardPage() {
 
               <div style={styles.planRow}>
                 <span style={styles.planKey}>Paid access:</span>
-                <span style={styles.planValue}>{accessActive ? "Assetен" : "Inactive"}</span>
+                <span style={styles.planValue}>{accessActive ? "Pending" : "Inactive"}</span>
               </div>
 
               <div style={styles.planRow}>
@@ -3496,6 +3591,15 @@ const styles: Record<string, React.CSSProperties> = {
   marketList: {
     display: "flex",
     flexDirection: "column",
+  },
+  marketEmptyState: {
+    padding: "14px",
+    borderRadius: "12px",
+    background: "rgba(255,255,255,0.03)",
+    border: "1px solid rgba(255,255,255,0.07)",
+    color: "#94a3b8",
+    fontSize: "12px",
+    lineHeight: 1.6,
   },
   marketRowButton: {
     background: "transparent",
