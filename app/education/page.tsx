@@ -413,6 +413,27 @@ function getLessonFocus(title: string) {
   };
 }
 
+function institutionUse(title: string) {
+  if (has(title, ["Revenue", "EPS", "P/E", "P/S", "PEG", "EBITDA", "Free Cash Flow", "FCF", "Margin", "ROE", "ROIC", "ROA", "Debt", "Interest Coverage", "Liquidity Ratios", "Market Cap", "Enterprise Value", "DCF", "Intrinsic Value", "Dividend", "Buybacks", "Dilution"])) {
+    return "Institutions use this metric inside comparative models, screening systems and investment committee notes. They rarely use it alone. They compare it with historical averages, sector peers, management guidance, balance-sheet risk, interest-rate conditions and expected future growth.";
+  }
+
+  if (has(title, ["RSI", "MACD", "Moving Averages", "Bollinger", "Fibonacci", "VWAP", "ATR", "Candlestick", "Support", "Resistance", "Trend", "Volume", "Breakout", "Divergence", "Chart", "Liquidity", "Order Flow", "Wyckoff", "Elliott"])) {
+    return "Professional desks use this concept to define market structure, liquidity zones, volatility, execution quality and trade risk. It is not treated as a guaranteed signal. It is combined with position sizing, stop placement, catalyst awareness and multi-timeframe confirmation.";
+  }
+
+  if (has(title, ["Inflation", "Deflation", "GDP", "Federal Reserve", "ECB", "Interest Rates", "Bond", "Yield Curve", "Quantitative Easing", "Dollar", "Oil", "Commodities", "Recession", "Credit", "Banking", "Labor", "Consumer", "Macro"])) {
+    return "Institutional investors use this topic to build a macro regime view. They connect economic data with central-bank policy, liquidity, earnings expectations, valuation multiples, currency trends and sector positioning.";
+  }
+
+  if (has(title, ["Bitcoin", "Ethereum", "Crypto", "Blockchain", "Mining", "Wallets", "Smart Contracts", "Layer", "DeFi", "Staking", "Tokenomics", "Stablecoins", "On-Chain", "Halving", "Altcoin", "NFT", "Meme", "Exchange", "Rug Pulls"])) {
+    return "Crypto funds and institutional desks use this concept to evaluate network strength, liquidity, custody risk, token supply, unlock schedules, regulation, exchange risk, on-chain activity and whether adoption is real or only speculative.";
+  }
+
+  return "Institutions use this concept as one part of a structured decision process. They define the investment question, collect evidence, compare alternatives, estimate risk, document assumptions and decide whether the expected return justifies the capital allocation.";
+}
+
+
 function buildLessonSections(lesson: Lesson) {
   const f = formulaFor(lesson.title);
   const focus = getLessonFocus(lesson.title);
