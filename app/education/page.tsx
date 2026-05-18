@@ -350,116 +350,166 @@ function formulaFor(title: string) {
   return { formula: "", example: "" };
 }
 
-function getLessonFocus(title: string) {
-  if (has(title, ["Video", "Screen Recording", "Walkthrough"])) {
-    return {
-      intro: `${title} is a future practical video module. Its purpose is to turn written theory into visual step-by-step demonstrations using charts, statements, watchlists, research notes and real market examples.`,
-      use: "This module will be used for screen recordings, narrated chart examples, practical walkthroughs and case studies. It should teach a viewer what to look at, where to click, what numbers matter and how to avoid mechanical mistakes.",
-      important: "Video helps beginners because many investing skills are visual and procedural. Seeing a chart, a financial report or a checklist in action is often easier than reading a definition.",
-      mistake: "The main beginner mistake is passive watching. A video lesson is useful only if the student pauses, repeats the process, takes notes and applies it to a real asset."
-    };
-  }
-
-  if (has(title, ["Reading", "Books", "Materials", "Papers", "Notes", "Literature"])) {
-    return {
-      intro: `${title} is a technical reading module. It is designed to organize high-quality books, reports, research papers, checklists and study notes into a repeatable learning path.`,
-      use: "This section is used to build a professional reading habit: extract frameworks, save formulas, summarize case studies and convert reading into investment checklists.",
-      important: "Reading gives depth. Markets reward investors who can compare current events with history, understand accounting language and recognize recurring patterns across cycles.",
-      mistake: "Beginners often read randomly without notes. Professional reading produces models, checklists and better questions."
-    };
-  }
-
-  if (has(title, ["Revenue", "EPS", "P/E", "P/S", "PEG", "EBITDA", "Free Cash Flow", "FCF", "Margin", "ROE", "ROIC", "ROA", "Debt", "Interest Coverage", "Liquidity Ratios", "Market Cap", "Enterprise Value", "DCF", "Intrinsic Value", "Dividend", "Buybacks", "Dilution"])) {
-    return {
-      intro: `${title} is a company-analysis metric lesson. It focuses on how to measure business performance, profitability, valuation, financial strength or shareholder value using numbers instead of opinion.`,
-      use: "Investors use this metric to compare companies, track performance over time, judge valuation and detect whether a business is improving or deteriorating.",
-      important: "Metrics matter because stock prices eventually react to growth, margins, cash flow, balance sheet strength and market expectations. A company can be popular and still be overpriced, or boring and still be valuable.",
-      mistake: "Beginners often isolate one ratio and ignore the full context. A metric must be compared with company history, competitors, sector economics, interest rates and the quality of the underlying business."
-    };
-  }
-
-  if (has(title, ["RSI", "MACD", "Moving Averages", "Bollinger", "Fibonacci", "VWAP", "ATR", "Candlestick", "Support", "Resistance", "Trend", "Volume", "Breakout", "Divergence", "Chart", "Liquidity", "Order Flow", "Wyckoff", "Elliott"])) {
-    return {
-      intro: `${title} is a technical-analysis lesson. It explains how price, volume, volatility and market structure can help investors and traders understand behavior on a chart.`,
-      use: "Traders use this tool to identify trend, momentum, support, resistance, volatility and possible entry or exit zones. It is most useful when combined with risk management and higher-timeframe context.",
-      important: "Technical analysis matters because markets are not only financial statements; they are also auction systems driven by buyers, sellers, liquidity and psychology.",
-      mistake: "Beginners often treat chart tools as predictions. Professionals treat them as probability tools and always define invalidation, position size and risk before entering."
-    };
-  }
-
-  if (has(title, ["Bitcoin", "Ethereum", "Crypto", "Blockchain", "Mining", "Wallets", "Smart Contracts", "Layer", "DeFi", "Staking", "Tokenomics", "Stablecoins", "On-Chain", "Halving", "Altcoin", "NFT", "Meme", "Exchange", "Rug Pulls"])) {
-    return {
-      intro: `${title} is a crypto-market lesson. It explains the technology, economic incentives, token supply, security, liquidity and adoption factors behind digital assets.`,
-      use: "Crypto investors use this knowledge to evaluate network utility, token design, liquidity, custody risk, regulation and whether market hype is supported by real activity.",
-      important: "Crypto is high-potential but high-risk. Understanding supply, unlocks, custody, protocol revenue, user activity and security is essential before allocating capital.",
-      mistake: "Beginners often buy narratives without checking supply, unlock schedules, liquidity, team incentives, exchange risk or whether the project solves a real problem."
-    };
-  }
-
-  if (has(title, ["Inflation", "Deflation", "GDP", "Federal Reserve", "ECB", "Interest Rates", "Bond", "Yield Curve", "Quantitative Easing", "Dollar", "Oil", "Commodities", "Recession", "Credit", "Banking", "Labor", "Consumer", "Macro"])) {
-    return {
-      intro: `${title} is a macroeconomic lesson. It explains how large economic forces influence stocks, bonds, commodities, currencies, crypto and investor behavior.`,
-      use: "Investors use macro analysis to understand market regimes, central-bank policy, liquidity conditions, recession risk and which asset classes may benefit or suffer.",
-      important: "Macro matters because even excellent companies can fall when liquidity tightens, rates rise or recession risk increases. It helps investors avoid analyzing companies in isolation.",
-      mistake: "Beginners often react to headlines without asking what the market expected, whether the data changes policy and which assets are actually sensitive to the change."
-    };
-  }
-
-  return {
-    intro: `${title} is a core investing lesson. It explains the concept directly and connects it to real decisions a beginner investor must eventually make.`,
-    use: "This concept is used to understand risk, value, behavior, market structure or capital allocation. It belongs in the investor's process because it improves decision quality.",
-    important: "It is important because investing is not guessing. A disciplined investor builds a framework, checks evidence and avoids emotional decisions.",
-    mistake: "Beginners often jump to action before understanding the concept, the numbers and the risk. A professional first defines the question, then analyzes the evidence."
-  };
+function topicArea(title: string) {
+  if (has(title, ["Revenue", "EPS", "P/E", "P/S", "PEG", "EBITDA", "Free Cash Flow", "FCF", "Margin", "ROE", "ROIC", "ROA", "Debt", "Interest Coverage", "Liquidity Ratios", "Market Cap", "Enterprise Value", "DCF", "Intrinsic Value", "Dividend", "Buybacks", "Dilution", "Financial Statement", "Income Statement", "Balance Sheet", "Cash Flow Statement", "Valuation"])) return "metric";
+  if (has(title, ["RSI", "MACD", "Moving Averages", "Bollinger", "Fibonacci", "VWAP", "ATR", "Candlestick", "Support", "Resistance", "Trend", "Volume", "Breakout", "Divergence", "Chart", "Liquidity Zones", "Stop Hunts", "Order Flow", "Wyckoff", "Elliott", "Technical"])) return "technical";
+  if (has(title, ["Bitcoin", "Ethereum", "Crypto", "Blockchain", "Mining", "Wallets", "Smart Contracts", "Layer", "DeFi", "Staking", "Yield Farming", "Liquidity Pools", "Stablecoins", "Tokenomics", "Token Unlocks", "On-chain", "Halving", "Altcoin", "NFT", "Meme", "Exchange", "Rug Pulls"])) return "crypto";
+  if (has(title, ["Inflation", "Deflation", "GDP", "Federal Reserve", "ECB", "Interest Rates", "Bond", "Yield Curve", "Quantitative Easing", "Liquidity Cycles", "Dollar", "Oil", "Commodities", "Geopolitics", "Recessions", "Credit Crises", "Banking Crises", "Debt Cycles", "Labor Market", "Consumer Spending", "Macro"])) return "macro";
+  if (has(title, ["Portfolio", "Diversification", "Correlation", "Asset Allocation", "Rebalancing", "Cash Management", "Defensive Positioning", "Risk Parity", "Hedging", "Black Swan", "Stress Testing", "Wealth Systems"])) return "portfolio";
+  if (has(title, ["Day Trading", "Swing Trading", "Position Trading", "Scalping", "Momentum Trading", "Breakout Trading", "Mean Reversion", "Trend Following", "Volatility Trading", "Pair Trading", "Market Making", "High Frequency", "Futures", "Options", "Greeks", "Leverage", "Margin", "Risk/reward", "Stop Loss", "Position Sizing", "Backtesting", "Expectancy", "Execution", "Trading System"])) return "trading";
+  if (has(title, ["Fear", "Greed", "FOMO", "Panic", "Overtrading", "Revenge", "Bias", "Discipline", "Patience", "Volatility", "Mindset", "Psychology", "Decision Making"])) return "psychology";
+  if (has(title, ["Video"])) return "video";
+  if (has(title, ["Literature", "Reading"])) return "reading";
+  return "foundation";
 }
 
-function institutionUse(title: string) {
-  if (has(title, ["Revenue", "EPS", "P/E", "P/S", "PEG", "EBITDA", "Free Cash Flow", "FCF", "Margin", "ROE", "ROIC", "ROA", "Debt", "Interest Coverage", "Liquidity Ratios", "Market Cap", "Enterprise Value", "DCF", "Intrinsic Value", "Dividend", "Buybacks", "Dilution"])) {
-    return "Institutions use this metric inside comparative models, screening systems and investment committee notes. They rarely use it alone. They compare it with historical averages, sector peers, management guidance, balance-sheet risk, interest-rate conditions and expected future growth.";
-  }
-
-  if (has(title, ["RSI", "MACD", "Moving Averages", "Bollinger", "Fibonacci", "VWAP", "ATR", "Candlestick", "Support", "Resistance", "Trend", "Volume", "Breakout", "Divergence", "Chart", "Liquidity", "Order Flow", "Wyckoff", "Elliott"])) {
-    return "Professional desks use this concept to define market structure, liquidity zones, volatility, execution quality and trade risk. It is not treated as a guaranteed signal. It is combined with position sizing, stop placement, catalyst awareness and multi-timeframe confirmation.";
-  }
-
-  if (has(title, ["Inflation", "Deflation", "GDP", "Federal Reserve", "ECB", "Interest Rates", "Bond", "Yield Curve", "Quantitative Easing", "Dollar", "Oil", "Commodities", "Recession", "Credit", "Banking", "Labor", "Consumer", "Macro"])) {
-    return "Institutional investors use this topic to build a macro regime view. They connect economic data with central-bank policy, liquidity, earnings expectations, valuation multiples, currency trends and sector positioning.";
-  }
-
-  if (has(title, ["Bitcoin", "Ethereum", "Crypto", "Blockchain", "Mining", "Wallets", "Smart Contracts", "Layer", "DeFi", "Staking", "Tokenomics", "Stablecoins", "On-Chain", "Halving", "Altcoin", "NFT", "Meme", "Exchange", "Rug Pulls"])) {
-    return "Crypto funds and institutional desks use this concept to evaluate network strength, liquidity, custody risk, token supply, unlock schedules, regulation, exchange risk, on-chain activity and whether adoption is real or only speculative.";
-  }
-
-  return "Institutions use this concept as one part of a structured decision process. They define the investment question, collect evidence, compare alternatives, estimate risk, document assumptions and decide whether the expected return justifies the capital allocation.";
+function directDefinition(title: string) {
+  if (has(title, ["What Money Is"])) return "Money is a tool that allows people to store value, measure value and exchange value without having to barter goods directly. For a beginner investor, money is not only something to spend; it is raw material that can be converted into productive assets.";
+  if (has(title, ["History of Money"])) return "The history of money is the history of trust. Societies moved from barter to metals, coins, paper currency, bank deposits and digital money because each system made trade easier, but each system also introduced new risks such as debasement, inflation and credit bubbles.";
+  if (has(title, ["Assets vs Liabilities"])) return "An asset is something that can produce value, cash flow or future economic benefit. A liability consumes cash or creates an obligation. The beginner investor must learn this distinction because wealth grows when assets increase faster than liabilities.";
+  if (has(title, ["What Is Investing", "What is investing"])) return "Investing means allocating capital into an asset because you expect it to produce future value through earnings, cash flow, appreciation, interest, dividends or network growth. It is different from gambling because the decision is based on evidence, valuation and risk control.";
+  if (has(title, ["Stock", "Share"])) return "A stock represents fractional ownership in a company. When you own shares, you own a small economic claim on the company's future profits, assets and cash distributions.";
+  if (has(title, ["IPO"])) return "An IPO is the process where a private company sells shares to the public market for the first time. It allows early investors and founders to monetize part of their ownership and gives public investors access to the company.";
+  if (has(title, ["Economic Moats"])) return "An economic moat is a durable business protection that helps a company defend profits against competitors. A moat can come from brand power, cost advantage, network effects, patents, scale or switching costs.";
+  if (has(title, ["Pricing Power"])) return "Pricing power is the ability of a company to raise prices without losing too many customers. It is one of the clearest signs of a strong business because it protects margins during inflation and cost pressure.";
+  if (has(title, ["Network Effects"])) return "A network effect exists when a product becomes more valuable as more people use it. Social networks, payment systems, marketplaces and software ecosystems often benefit from this because each new user can increase utility for other users.";
+  if (has(title, ["Reading", "Literature"])) return "Technical literature is the structured reading layer of the academy. It is where investors deepen their understanding through books, research papers, annual reports, case studies and professional checklists.";
+  if (has(title, ["Video"])) return "Video lessons are a future practical layer of the academy. They are designed to show chart reading, financial-statement analysis, watchlist construction and research workflows visually.";
+  return `${title} is an investment concept that helps you understand how capital, risk, markets, companies or investor behavior work. A beginner should not memorize it as a definition only; the goal is to connect the concept to a real decision: buy, avoid, wait, size smaller, diversify or research deeper.`;
 }
 
+function beginnerExplanation(title: string) {
+  const area = topicArea(title);
+
+  if (area === "metric") {
+    return `This lesson is about measuring a business with numbers. In professional investing, opinions are weak unless they are supported by revenue, profit, cash flow, balance-sheet strength, valuation and return on capital. ${title} helps you move from “I like this company” to “I understand what the market is paying for and what must happen for this investment to work.” A beginner should learn three things: what the number measures, whether higher or lower is better, and what can make the number misleading.`;
+  }
+
+  if (area === "technical") {
+    return `This lesson is about reading market behavior through price, volume, volatility and trend. Technical analysis does not tell the future. It helps you organize probabilities. ${title} should be used to answer practical questions: is the market trending or ranging, where are buyers likely to defend, where could sellers appear, how volatile is the asset, and where is the trade idea wrong?`;
+  }
+
+  if (area === "crypto") {
+    return `This lesson is about evaluating digital assets beyond hype. Crypto assets can represent monetary networks, smart-contract platforms, governance tokens, stablecoin systems, exchange tokens or speculative communities. ${title} should be studied through utility, supply, security, liquidity, token incentives, developer activity, regulation and user adoption.`;
+  }
+
+  if (area === "macro") {
+    return `This lesson explains a macroeconomic force that can move all asset classes at the same time. Stocks, bonds, commodities, currencies and crypto do not move only because of company news. They also react to inflation, central banks, credit conditions, liquidity, recession risk and global capital flows. ${title} helps you understand the environment in which investments operate.`;
+  }
+
+  if (area === "portfolio") {
+    return `This lesson is about building and protecting a complete investment portfolio. A portfolio is not just a list of favorite assets. It is a system of weights, risk limits, time horizons, liquidity needs and expected returns. ${title} helps a beginner avoid putting all capital into one idea or one market regime.`;
+  }
+
+  if (area === "trading") {
+    return `This lesson is about professional trade construction. A trade is not only an entry. It includes setup, catalyst, invalidation, stop placement, position size, target, execution and post-trade review. ${title} teaches how traders convert a market opinion into a controlled risk plan.`;
+  }
+
+  if (area === "psychology") {
+    return `This lesson is about investor behavior. Markets test patience, discipline and emotional control. ${title} matters because many beginners do not lose money from lack of intelligence; they lose money because they panic, chase, overtrade, ignore risk or change plans under pressure.`;
+  }
+
+  return `This lesson builds the foundation for investment thinking. ${title} may look basic, but basic concepts are where most mistakes begin. If you understand the foundation clearly, you can later analyze companies, macro cycles, technical charts and crypto assets with more confidence.`;
+}
+
+function metricExplanation(title: string, formula: string, example: string) {
+  return `Metric-focused analysis:\n${formula}\n\nWorked example:\n${example}\n\nHow to read it professionally:\nA single number is not enough. Compare the metric with the company's own history, direct competitors, sector averages and the current interest-rate environment. For example, a 30× P/E may be reasonable for a company growing earnings 30% per year with high margins and low debt, but expensive for a slow-growth business with falling margins. Always ask whether the market already prices in the optimistic scenario.`;
+}
+
+function practicalExample(title: string) {
+  const area = topicArea(title);
+
+  if (area === "metric") {
+    return `Real example framework:\nImagine Company A has revenue of $10 billion, net income of $1.5 billion, free cash flow of $1.2 billion and a market cap of $45 billion. A beginner might only see that the company is “popular.” A professional compares growth, margins, cash generation and valuation. If revenue grows 20% but free cash flow is falling, the quality of growth is questionable. If free cash flow grows faster than revenue, the business may be becoming more efficient.`;
+  }
+
+  if (area === "technical") {
+    return `Real chart example:\nSuppose a stock rises from $80 to $120, then pulls back to $105 while volume declines. If $100–$105 was a prior resistance zone, it may become support. A beginner may buy only because the price is lower. A professional checks trend, volume, volatility, invalidation level and reward-to-risk before acting.`;
+  }
+
+  if (area === "crypto") {
+    return `Real crypto example:\nA token trades at $2 with 500 million circulating tokens, so market cap is $1 billion. If maximum supply is 2 billion tokens, fully diluted valuation is $4 billion. If large unlocks arrive in six months, early investors may sell into the market. The lesson is simple: price alone tells you almost nothing without supply and liquidity context.`;
+  }
+
+  if (area === "macro") {
+    return `Real macro example:\nIf inflation falls from 8% to 3% and the central bank signals lower rates, growth stocks may benefit because future earnings are discounted at a lower rate. If inflation rises again and rates move higher, long-duration assets can fall even if company news is positive. Macro changes the valuation environment.`;
+  }
+
+  if (area === "portfolio") {
+    return `Real portfolio example:\nA beginner may hold 90% of capital in one technology stock because it performed well recently. A more balanced portfolio may hold 50% quality stocks, 20% bonds or cash-like instruments, 10% commodities or hedges, 10% crypto and 10% tactical opportunities. The exact mix depends on risk tolerance, time horizon and market regime.`;
+  }
+
+  if (area === "trading") {
+    return `Real trading example:\nYou buy at $100, set a stop at $96 and target $112. Your risk is $4 and potential reward is $12, so reward-to-risk is 3:1. On a $20,000 account, if you risk 1%, your maximum loss is $200. Position size = $200 / $4 = 50 shares. The trade is planned before entry, not emotionally after entry.`;
+  }
+
+  return `Real-world application:\nTake a company like Apple, NVIDIA, Tesla, Berkshire Hathaway or a crypto asset like Bitcoin or Ethereum. Study only this lesson's topic first. Do not try to analyze everything at once. Ask: what does this topic reveal, what evidence supports it, what could go wrong and how would a professional verify it?`;
+}
+
+function professionalUse(title: string) {
+  const area = topicArea(title);
+  if (area === "metric") return "Professional investors use this inside models, research notes and investment committee discussions. They combine it with management quality, competitive advantage, cyclicality, accounting quality and valuation sensitivity.";
+  if (area === "technical") return "Professional traders use this to define execution zones, risk limits and market structure. They do not rely on one indicator. They combine price action, volume, volatility, liquidity and catalyst awareness.";
+  if (area === "crypto") return "Crypto funds use this to evaluate token design, unlock schedules, on-chain activity, exchange liquidity, protocol revenue, developer activity and custody risk.";
+  if (area === "macro") return "Institutional macro desks use this to estimate the market regime: risk-on, risk-off, inflationary, deflationary, liquidity expansion or liquidity contraction.";
+  if (area === "portfolio") return "Portfolio managers use this to balance return targets with drawdown control, diversification, liquidity, correlation and stress scenarios.";
+  if (area === "trading") return "Professional traders use this to turn a setup into a repeatable process with predefined risk, position size, execution rules and review.";
+  return "Institutions use this as part of a structured process: define the question, collect evidence, compare alternatives, estimate risk and only then allocate capital.";
+}
+
+function beginnerMistake(title: string) {
+  const area = topicArea(title);
+  if (area === "metric") return "The beginner mistake is treating one metric as a final answer. No ratio is perfect. Accounting choices, one-time gains, debt, buybacks, cyclicality and sector differences can distort the picture.";
+  if (area === "technical") return "The beginner mistake is believing that an indicator is a prediction. Indicators describe current or past behavior. Risk management decides whether the trade is acceptable.";
+  if (area === "crypto") return "The beginner mistake is buying because the token is cheap in unit price. A $0.05 token can be more expensive than a $500 token if supply and valuation are excessive.";
+  if (area === "macro") return "The beginner mistake is reacting to the headline instead of understanding expectations. Markets move when reality differs from what investors already expected.";
+  if (area === "portfolio") return "The beginner mistake is confusing diversification with owning many similar assets. Ten high-growth tech stocks may still behave like one concentrated bet.";
+  if (area === "trading") return "The beginner mistake is entering before defining stop, target and position size. Professionals calculate risk before they click buy or sell.";
+  return "The beginner mistake is rushing from definition to action. First understand the concept, then test it on real examples, then decide whether it belongs in your process.";
+}
 
 function buildLessonSections(lesson: Lesson) {
   const f = formulaFor(lesson.title);
-  const focus = getLessonFocus(lesson.title);
+  const area = topicArea(lesson.title);
   const sections = [
-    { heading: "1. Concept", body: focus.intro },
-    { heading: "2. Practical Use", body: focus.use },
-    { heading: "3. Why It Matters", body: focus.important },
+    {
+      heading: "Clear Beginner Explanation",
+      body: `${directDefinition(lesson.title)}\n\n${beginnerExplanation(lesson.title)}`
+    },
+    {
+      heading: area === "metric" ? "What This Metric Measures" : area === "technical" ? "How to Use It on a Chart" : area === "macro" ? "Market and Economic Impact" : area === "crypto" ? "How to Evaluate It in Crypto" : "How It Works in Practice",
+      body: area === "metric"
+        ? "The purpose is to convert business reality into comparable numbers. Good analysis asks: is the company growing, is it profitable, does it produce cash, is the balance sheet safe, and is the valuation reasonable compared with future potential?"
+        : area === "technical"
+        ? "Start with the higher timeframe trend, mark important levels, check volume and volatility, then define the exact condition that would prove your idea wrong. The tool is useful only when it improves timing and risk control."
+        : area === "macro"
+        ? "Macro forces influence discount rates, liquidity, earnings expectations, currency strength and investor risk appetite. A good investor connects the data to asset-class behavior instead of reading headlines in isolation."
+        : area === "crypto"
+        ? "Evaluate the network, the token supply, the utility, liquidity, security, unlock schedule, developer activity, exchange availability and regulation. A strong narrative is not enough without economic substance."
+        : "Use the concept as a decision filter. Define the question, collect data, compare alternatives, estimate risk and decide whether the expected reward justifies the uncertainty."
+    }
   ];
 
   if (f.formula) {
     sections.push({
-      heading: "4. Formula and Calculation",
-      body: `${f.formula}\n\nDetailed example:\n${f.example}`
-    });
-  } else {
-    sections.push({
-      heading: "4. How It Works in Practice",
-      body: "This topic works as part of a decision framework. First, define the asset or market you are analyzing. Second, identify the main driver of value or risk. Third, collect evidence. Fourth, compare that evidence with history, competitors and the current market price. Finally, decide whether the potential reward is worth the risk."
+      heading: "Formula, Calculation and Numeric Example",
+      body: metricExplanation(lesson.title, f.formula, f.example)
     });
   }
 
   sections.push(
-    { heading: "5. Real Example", body: `Apply this lesson to a real asset. For example, compare Apple, NVIDIA, Tesla, Berkshire Hathaway, Bitcoin or Ethereum only through the lens of “${lesson.title}”. The goal is not to admire the asset, but to understand what this specific topic reveals about quality, risk, valuation or timing.` },
-    { heading: "6. Institutional Perspective", body: institutionUse(lesson.title) },
-    { heading: "7. Common Beginner Mistakes", body: focus.mistake },
-    { heading: "8. Checklist", body: "• Define the asset.\n• Identify the relevant data.\n• Calculate the metric if the topic has a formula.\n• Compare with history and competitors.\n• Check whether the market price already reflects the good news.\n• Define what would prove the idea wrong.\n• Control position size before entering." }
+    {
+      heading: "Practical Example",
+      body: practicalExample(lesson.title)
+    },
+    {
+      heading: "How Professionals Use It",
+      body: professionalUse(lesson.title)
+    },
+    {
+      heading: "Typical Beginner Mistake",
+      body: beginnerMistake(lesson.title)
+    }
   );
 
   return sections;
