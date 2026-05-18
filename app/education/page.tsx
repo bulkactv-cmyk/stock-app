@@ -307,90 +307,141 @@ function getCategory(title: string) {
 }
 
 function formulaFor(title: string) {
-  if (has(title, ["Inflation", "CPI"])) return { formula: "Inflation Rate = (Current CPI - Previous CPI) / Previous CPI × 100", example: "If CPI rises from 250 to 270, inflation is (270 - 250) / 250 × 100 = 8%. If your cash earns 2%, the approximate real return is 2% - 8% = -6%." };
-  if (has(title, ["Compound Interest"])) return { formula: "Future Value = Present Value × (1 + r)^n", example: "Investing $10,000 at 8% annually for 20 years gives 10,000 × (1.08)^20 = $46,610. Time and reinvestment do most of the heavy work." };
-  if (has(title, ["Market Capitalization", "Enterprise Value"])) return { formula: "Market Cap = Share Price × Shares Outstanding\nEnterprise Value = Market Cap + Total Debt - Cash", example: "A $120 share price and 1 billion shares create a $120 billion market cap. With $20 billion debt and $10 billion cash, EV = 120 + 20 - 10 = $130 billion." };
-  if (has(title, ["Revenue"])) return { formula: "Revenue = Price × Units Sold\nRevenue Growth = (Current Revenue - Previous Revenue) / Previous Revenue × 100", example: "1 million units sold at $50 create $50 million revenue. If sales become 1.2 million units at $55, revenue becomes $66 million, a 32% increase." };
-  if (has(title, ["EPS"])) return { formula: "EPS = Net Income / Shares Outstanding", example: "A company with $10 billion net income and 5 billion shares has EPS of $2. If EPS grows to $2.50, EPS growth is 25%." };
-  if (has(title, ["P/E"])) return { formula: "P/E = Share Price / EPS\nImplied Price = EPS × P/E", example: "EPS of $7 and a P/E of 28 imply a $196 price. If EPS rises to $8 but the P/E compresses to 22, the implied price becomes $176." };
-  if (has(title, ["PEG"])) return { formula: "PEG = P/E / EPS Growth Rate", example: "A company with P/E 30 and EPS growth 20% has PEG 1.5. A P/E 20 company growing 5% has PEG 4.0. Lower P/E does not always mean better value." };
-  if (has(title, ["P/S"])) return { formula: "P/S = Market Cap / Revenue", example: "A $100 billion market cap and $25 billion revenue create a P/S ratio of 4. This is often useful for high-growth companies with limited current earnings." };
-  if (has(title, ["EBITDA"])) return { formula: "EBITDA = Operating Income + Depreciation + Amortization\nEV/EBITDA = Enterprise Value / EBITDA", example: "Operating income of $8 billion plus D&A of $1.5 billion gives EBITDA of $9.5 billion. EV of $95 billion gives EV/EBITDA of 10." };
-  if (has(title, ["Free Cash Flow", "FCF"])) return { formula: "FCF = Operating Cash Flow - Capital Expenditures\nFCF Yield = FCF / Market Cap × 100", example: "Operating cash flow of $15 billion minus capex of $5 billion gives FCF of $10 billion. With a $200 billion market cap, FCF yield is 5%." };
-  if (has(title, ["Gross Margin"])) return { formula: "Gross Margin = (Revenue - COGS) / Revenue × 100", example: "Revenue of $100 million and COGS of $40 million give gross margin of 60%. High gross margin often signals product strength or brand power." };
-  if (has(title, ["Operating Margin"])) return { formula: "Operating Margin = Operating Income / Revenue × 100", example: "Operating income of $25 million and revenue of $100 million give operating margin of 25%. Rising operating margin often shows scalability." };
-  if (has(title, ["Net Margin"])) return { formula: "Net Margin = Net Income / Revenue × 100", example: "Net income of $18 million and revenue of $100 million give net margin of 18%. If revenue grows but net margin falls, expenses may be absorbing the growth." };
-  if (has(title, ["ROE"])) return { formula: "ROE = Net Income / Shareholders' Equity × 100", example: "Net income of $10 billion and equity of $50 billion give ROE of 20%. Always check whether high ROE is driven by excessive leverage." };
-  if (has(title, ["ROIC"])) return { formula: "ROIC = NOPAT / Invested Capital × 100", example: "NOPAT of $8 billion and invested capital of $40 billion give ROIC of 20%. Consistently high ROIC often indicates a high-quality business." };
-  if (has(title, ["ROA"])) return { formula: "ROA = Net Income / Total Assets × 100", example: "Net income of $10 billion and total assets of $100 billion give ROA of 10%. ROA measures how efficiently assets create profit." };
-  if (has(title, ["Debt", "Interest Coverage", "Liquidity Ratios"])) return { formula: "Net Debt = Total Debt - Cash\nInterest Coverage = EBIT / Interest Expense", example: "Debt of $30 billion and cash of $12 billion create net debt of $18 billion. EBIT of $10 billion and interest expense of $1 billion give interest coverage of 10." };
-  if (has(title, ["RSI"])) return { formula: "RSI = 100 - [100 / (1 + RS)]\nRS = Average Gain / Average Loss", example: "RSI above 70 can signal strong momentum or overheating. RSI below 30 can signal oversold conditions. It should never be used alone." };
-  if (has(title, ["MACD"])) return { formula: "MACD Line = 12 EMA - 26 EMA\nSignal Line = 9 EMA of MACD\nHistogram = MACD Line - Signal Line", example: "A bullish MACD cross suggests improving momentum, but in sideways markets MACD can create many false signals." };
-  if (has(title, ["Moving Averages"])) return { formula: "SMA = Sum of Closing Prices / Number of Periods", example: "Closing prices of 100, 102, 101, 105 and 107 create a 5-day SMA of 103. Price above the 200-day average often signals long-term strength." };
-  if (has(title, ["ATR"])) return { formula: "True Range = max(High-Low, |High-Previous Close|, |Low-Previous Close|)\nATR = Average True Range", example: "If ATR is $5, a $1 stop is probably too tight and may be hit by normal market noise." };
-  if (has(title, ["VWAP"])) return { formula: "VWAP = Sum(Price × Volume) / Sum(Volume)", example: "An institution buying below VWAP receives a better average price than the volume-weighted market average for the session." };
-  if (has(title, ["Position Sizing", "Risk/Reward"])) return { formula: "Position Size = Amount Risked / Stop Loss Distance\nExpected Value = (Win Rate × Average Win) - (Loss Rate × Average Loss)", example: "With a $100,000 portfolio and 1% risk, the dollar risk is $1,000. If the stop is 5%, position size is $20,000." };
-  if (has(title, ["Bitcoin", "Ethereum", "Crypto", "Token", "DeFi", "Blockchain"])) return { formula: "Crypto Market Cap = Token Price × Circulating Supply\nFDV = Token Price × Max Supply", example: "A token priced at $2 with 500 million circulating supply has a $1 billion market cap. If max supply is 2 billion, FDV is $4 billion." };
-  return { formula: "Professional Framework = Concept + Numbers + Context + Risk Management", example: "A professional decision combines business quality, valuation, macro conditions, liquidity, risk control and market behavior. One metric is never enough." };
+  if (has(title, ["Inflation", "CPI"])) return { formula: "Inflation Rate = (Current CPI - Previous CPI) / Previous CPI × 100", example: "If CPI rises from 250 to 270, inflation is (270 - 250) / 250 × 100 = 8%. If wages rise only 4%, real purchasing power falls by roughly 4%." };
+  if (has(title, ["Deflation"])) return { formula: "Deflation Rate = (Current Price Index - Previous Price Index) / Previous Price Index × 100", example: "If the price index falls from 200 to 194, deflation is (194 - 200) / 200 × 100 = -3%. Goods are cheaper, but falling demand can hurt company revenue and employment." };
+  if (has(title, ["Compound Interest"])) return { formula: "Future Value = Present Value × (1 + r)^n", example: "Investing $10,000 at 8% for 20 years gives 10,000 × (1.08)^20 = $46,610. The gain is not linear because returns compound on previous returns." };
+  if (has(title, ["Market Capitalization", "Market Cap"])) return { formula: "Market Cap = Share Price × Shares Outstanding", example: "If a company has 1.5 billion shares and each share trades at $80, market cap = 1.5B × $80 = $120B." };
+  if (has(title, ["Enterprise Value"])) return { formula: "Enterprise Value = Market Cap + Total Debt + Preferred Equity + Minority Interest - Cash", example: "Market cap $120B + debt $25B - cash $10B = enterprise value of $135B. EV estimates the full takeover value of the business." };
+  if (has(title, ["Revenue"])) return { formula: "Revenue = Units Sold × Average Selling Price\nRevenue Growth = (Current Revenue - Previous Revenue) / Previous Revenue × 100", example: "If a company sold 2M devices at $500, revenue is $1B. If next year revenue is $1.25B, growth = (1.25 - 1.00) / 1.00 × 100 = 25%." };
+  if (has(title, ["EPS"])) return { formula: "EPS = Net Income / Weighted Average Shares Outstanding", example: "Net income of $12B and 4B shares gives EPS = $3.00. If shares fall to 3.8B through buybacks and income stays $12B, EPS rises to $3.16." };
+  if (has(title, ["P/E"])) return { formula: "P/E = Share Price / EPS", example: "A stock at $150 with EPS of $6 trades at 25× earnings. If EPS grows to $7 and the market still pays 25×, implied value becomes $175." };
+  if (has(title, ["PEG"])) return { formula: "PEG = P/E Ratio / Expected EPS Growth Rate", example: "P/E 30 with expected EPS growth of 20% gives PEG = 1.5. P/E 18 with growth of 6% gives PEG = 3.0, which may be less attractive despite the lower P/E." };
+  if (has(title, ["P/S"])) return { formula: "P/S = Market Cap / Revenue", example: "A $50B company with $10B revenue trades at 5× sales. If revenue grows but margins remain weak, the P/S ratio alone can mislead investors." };
+  if (has(title, ["EV/EBITDA"])) return { formula: "EV/EBITDA = Enterprise Value / EBITDA", example: "EV of $90B and EBITDA of $9B produce EV/EBITDA = 10×. This is useful when comparing companies with different debt levels." };
+  if (has(title, ["EBITDA"])) return { formula: "EBITDA = Operating Income + Depreciation + Amortization", example: "Operating income of $4B plus depreciation and amortization of $1B gives EBITDA of $5B. It approximates operating cash profitability before financing and taxes." };
+  if (has(title, ["Free Cash Flow", "FCF"])) return { formula: "Free Cash Flow = Operating Cash Flow - Capital Expenditures", example: "Operating cash flow of $18B minus capex of $6B gives FCF of $12B. This is cash available for debt reduction, buybacks, dividends or reinvestment." };
+  if (has(title, ["FCF Yield"])) return { formula: "FCF Yield = Free Cash Flow / Market Cap × 100", example: "FCF of $12B and market cap of $240B gives FCF yield = 5%. A higher FCF yield can indicate better value if cash flow is durable." };
+  if (has(title, ["Gross Margin"])) return { formula: "Gross Margin = (Revenue - Cost of Goods Sold) / Revenue × 100", example: "Revenue of $100M and COGS of $42M produce gross margin of 58%. High gross margin often suggests pricing power, brand strength or software-like economics." };
+  if (has(title, ["Operating Margin"])) return { formula: "Operating Margin = Operating Income / Revenue × 100", example: "Operating income of $24M on $100M revenue gives operating margin of 24%. Rising operating margin means the business keeps more profit after operating expenses." };
+  if (has(title, ["Net Margin"])) return { formula: "Net Margin = Net Income / Revenue × 100", example: "Net income of $15M on $100M revenue gives net margin of 15%. If revenue grows but net margin falls to 5%, growth may not be translating into shareholder profit." };
+  if (has(title, ["Margins"])) return { formula: "Gross Margin = Gross Profit / Revenue × 100\nOperating Margin = Operating Income / Revenue × 100\nNet Margin = Net Income / Revenue × 100", example: "On $100M revenue: gross profit $60M = 60% gross margin; operating income $25M = 25% operating margin; net income $18M = 18% net margin." };
+  if (has(title, ["ROE"])) return { formula: "ROE = Net Income / Shareholders' Equity × 100", example: "Net income of $8B and equity of $40B gives ROE = 20%. Check debt: leverage can make ROE look high even when business quality is average." };
+  if (has(title, ["ROIC"])) return { formula: "ROIC = NOPAT / Invested Capital × 100", example: "NOPAT of $6B and invested capital of $30B gives ROIC = 20%. A company earning ROIC above its cost of capital creates value." };
+  if (has(title, ["ROA"])) return { formula: "ROA = Net Income / Total Assets × 100", example: "Net income of $5B and total assets of $100B gives ROA = 5%. Asset-light businesses often have higher ROA than banks or industrial firms." };
+  if (has(title, ["Interest Coverage"])) return { formula: "Interest Coverage = EBIT / Interest Expense", example: "EBIT of $3B and interest expense of $300M gives coverage of 10×. Below 2× can become dangerous in a recession." };
+  if (has(title, ["Liquidity Ratios"])) return { formula: "Current Ratio = Current Assets / Current Liabilities\nQuick Ratio = (Cash + Marketable Securities + Receivables) / Current Liabilities", example: "Current assets $5B and current liabilities $2.5B give a current ratio of 2.0. A quick ratio below 1.0 can signal short-term liquidity pressure." };
+  if (has(title, ["Debt Analysis", "Debt, Credit", "Debt Cycles"])) return { formula: "Net Debt = Total Debt - Cash\nNet Debt / EBITDA = Net Debt / EBITDA", example: "Debt $20B, cash $6B, EBITDA $7B: net debt = $14B and net debt/EBITDA = 2.0×. Higher leverage increases risk when earnings fall." };
+  if (has(title, ["DCF"])) return { formula: "Intrinsic Value = Present Value of Future Free Cash Flows\nPV = FCF / (1 + Discount Rate)^n", example: "If expected FCF is $10B next year and the discount rate is 10%, the year-one present value is $10B / 1.10 = $9.09B. DCF is sensitive to growth and discount-rate assumptions." };
+  if (has(title, ["Intrinsic Value"])) return { formula: "Intrinsic Value per Share = Estimated Business Value / Shares Outstanding", example: "If the estimated value of a company is $150B and it has 1B shares, intrinsic value is $150 per share. If the stock trades at $110, the discount is about 27%." };
+  if (has(title, ["Margin of Safety"])) return { formula: "Margin of Safety = (Intrinsic Value - Market Price) / Intrinsic Value × 100", example: "Intrinsic value $100 and market price $75 give margin of safety = 25%. This protects against mistakes in assumptions." };
+  if (has(title, ["Dividend"])) return { formula: "Dividend Yield = Annual Dividend per Share / Share Price × 100\nPayout Ratio = Dividends / Net Income × 100", example: "A $3 annual dividend on a $60 stock gives a 5% yield. If the company earns $5 EPS and pays $3, payout ratio is 60%." };
+  if (has(title, ["Buybacks", "Dilution"])) return { formula: "Share Count Change = (New Shares - Old Shares) / Old Shares × 100", example: "If shares fall from 1.0B to 0.9B, share count declines 10%, boosting each remaining share's claim on earnings. If shares rise to 1.2B, shareholders are diluted by 20%." };
+  if (has(title, ["RSI"])) return { formula: "RSI = 100 - [100 / (1 + RS)]\nRS = Average Gain / Average Loss", example: "If average gain is 1.2 and average loss is 0.8, RS = 1.5 and RSI = 60. RSI above 70 can show strong momentum or overextension; below 30 can show weakness or oversold pressure." };
+  if (has(title, ["MACD"])) return { formula: "MACD Line = 12-period EMA - 26-period EMA\nSignal Line = 9-period EMA of MACD\nHistogram = MACD Line - Signal Line", example: "If the 12 EMA rises above the 26 EMA and MACD crosses above the signal line, momentum is improving. In sideways markets, the same signal may fail repeatedly." };
+  if (has(title, ["Moving Averages"])) return { formula: "Simple Moving Average = Sum of Closing Prices / Number of Periods", example: "Closing prices 100, 102, 103, 101, 104 give a 5-day SMA of 102. A 50-day average above the 200-day average often signals longer-term strength." };
+  if (has(title, ["Bollinger"])) return { formula: "Upper Band = Moving Average + 2 Standard Deviations\nLower Band = Moving Average - 2 Standard Deviations", example: "If the 20-day average is $100 and standard deviation is $4, the upper band is $108 and lower band is $92. Bands expand when volatility rises." };
+  if (has(title, ["ATR"])) return { formula: "True Range = max(High-Low, |High-Previous Close|, |Low-Previous Close|)\nATR = Average True Range", example: "If a stock has ATR of $5, a $1 stop-loss is likely too tight. Professionals use ATR to size stops around normal volatility." };
+  if (has(title, ["VWAP"])) return { formula: "VWAP = Sum(Price × Volume) / Sum(Volume)", example: "If most volume traded near $50 and your average buy price is $49.70, execution is better than VWAP. Institutions use VWAP to judge execution quality." };
+  if (has(title, ["Fibonacci"])) return { formula: "Common retracement levels: 23.6%, 38.2%, 50%, 61.8%, 78.6%", example: "If a stock rises from $100 to $150, a 50% retracement is $125 and a 61.8% retracement is about $119.10. These are zones, not guarantees." };
+  if (has(title, ["Risk/Reward"])) return { formula: "Risk/Reward = Potential Loss / Potential Gain\nReward/Risk = Potential Gain / Potential Loss", example: "Buying at $100 with stop at $95 and target at $115 risks $5 to make $15. Reward/risk = 3:1." };
+  if (has(title, ["Position Sizing"])) return { formula: "Position Size = Account Risk / Stop Distance", example: "On a $50,000 account, risking 1% means $500 risk. If stop distance is $2 per share, position size = 250 shares." };
+  if (has(title, ["Expected", "Expectancy", "Probability"])) return { formula: "Expectancy = (Win Rate × Average Win) - (Loss Rate × Average Loss)", example: "Win rate 45%, average win $300, loss rate 55%, average loss $150: expectancy = 0.45×300 - 0.55×150 = $52.50 per trade." };
+  if (has(title, ["Crypto", "Bitcoin", "Ethereum", "Token", "Blockchain", "DeFi", "Staking", "Yield", "Stablecoins"])) return { formula: "Market Cap = Token Price × Circulating Supply\nFDV = Token Price × Maximum Supply", example: "A token priced at $2 with 500M circulating supply has $1B market cap. If max supply is 2B, FDV is $4B, meaning future dilution risk may be large." };
+  return { formula: "", example: "" };
 }
 
-function specificDescription(title: string) {
-  const category = getCategory(title);
-  const name = title.replace(/^Lesson \d+ — /, "");
-  const base: Record<string, string> = {
-    foundation: `${name} explains the financial foundation behind every investment decision. The lesson connects personal finance, purchasing power, capital formation and rational decision-making, so a beginner can understand how money, time, risk and behavior shape long-term wealth.`,
-    stocks: `${name} explains how equity ownership works in real markets. The lesson connects company quality, shareholder rights, valuation, sector behavior and institutional participation, so a beginner can understand why stock prices move and how to judge whether a business deserves capital.`,
-    fundamental: `${name} explains how investors read business performance through financial statements and valuation metrics. The lesson focuses on numbers, formulas, quality of earnings, cash generation, balance sheet strength and the difference between accounting profit and real owner value.`,
-    macro: `${name} explains how the broad economy affects stocks, bonds, currencies, commodities and crypto. The lesson connects growth, inflation, central banks, interest rates, liquidity and investor positioning, so the student can understand why markets react to economic data.`,
-    technical: `${name} explains how market participants express behavior through price, volume and chart structure. The lesson teaches the tool as a decision framework, not as a magic signal, and shows how professionals combine it with trend, liquidity, volatility and risk management.`,
-    trading: `${name} explains a practical trading concept used to manage entries, exits, risk and execution. The lesson focuses on process, probability, position sizing, discipline and avoiding emotional decisions in fast-moving markets.`,
-    crypto: `${name} explains a crypto and blockchain concept from the perspective of security, utility, liquidity, token supply and adoption. The lesson helps beginners avoid hype-driven decisions and analyze crypto assets like serious market instruments.`,
-    psychology: `${name} explains a behavioral finance concept that affects real investor performance. The lesson focuses on emotional control, cognitive bias, decision quality and the gap between knowing what to do and actually doing it under pressure.`,
-    portfolio: `${name} explains how investors combine assets into a coherent portfolio. The lesson focuses on diversification, correlation, risk budgeting, rebalancing and building a system that can survive different market environments.`,
-    institutional: `${name} explains how professional market participants think, operate and allocate capital. The lesson connects large-scale capital flows, execution, liquidity, research systems and institutional decision-making.`,
-    video: `${name} is a prepared module for future visual education. It defines what the video lesson will demonstrate on screen, what chart or report will be used, what the viewer should learn and how the topic will connect to practical investing decisions.`,
-    literature: `${name} is a structured reading module. It explains what type of books, reports, research papers or notes belong in this section, how to study them and how to convert reading into practical investment skill.`,
-    general: `${name} explains an important market concept through definitions, examples, formulas where relevant and practical institutional context.`,
+function getLessonFocus(title: string) {
+  if (has(title, ["Video", "Screen Recording", "Walkthrough"])) {
+    return {
+      intro: `${title} is a future practical video module. Its purpose is to turn written theory into visual step-by-step demonstrations using charts, statements, watchlists, research notes and real market examples.`,
+      use: "This module will be used for screen recordings, narrated chart examples, practical walkthroughs and case studies. It should teach a viewer what to look at, where to click, what numbers matter and how to avoid mechanical mistakes.",
+      important: "Video helps beginners because many investing skills are visual and procedural. Seeing a chart, a financial report or a checklist in action is often easier than reading a definition.",
+      mistake: "The main beginner mistake is passive watching. A video lesson is useful only if the student pauses, repeats the process, takes notes and applies it to a real asset."
+    };
+  }
+
+  if (has(title, ["Reading", "Books", "Materials", "Papers", "Notes", "Literature"])) {
+    return {
+      intro: `${title} is a technical reading module. It is designed to organize high-quality books, reports, research papers, checklists and study notes into a repeatable learning path.`,
+      use: "This section is used to build a professional reading habit: extract frameworks, save formulas, summarize case studies and convert reading into investment checklists.",
+      important: "Reading gives depth. Markets reward investors who can compare current events with history, understand accounting language and recognize recurring patterns across cycles.",
+      mistake: "Beginners often read randomly without notes. Professional reading produces models, checklists and better questions."
+    };
+  }
+
+  if (has(title, ["Revenue", "EPS", "P/E", "P/S", "PEG", "EBITDA", "Free Cash Flow", "FCF", "Margin", "ROE", "ROIC", "ROA", "Debt", "Interest Coverage", "Liquidity Ratios", "Market Cap", "Enterprise Value", "DCF", "Intrinsic Value", "Dividend", "Buybacks", "Dilution"])) {
+    return {
+      intro: `${title} is a company-analysis metric lesson. It focuses on how to measure business performance, profitability, valuation, financial strength or shareholder value using numbers instead of opinion.`,
+      use: "Investors use this metric to compare companies, track performance over time, judge valuation and detect whether a business is improving or deteriorating.",
+      important: "Metrics matter because stock prices eventually react to growth, margins, cash flow, balance sheet strength and market expectations. A company can be popular and still be overpriced, or boring and still be valuable.",
+      mistake: "Beginners often isolate one ratio and ignore the full context. A metric must be compared with company history, competitors, sector economics, interest rates and the quality of the underlying business."
+    };
+  }
+
+  if (has(title, ["RSI", "MACD", "Moving Averages", "Bollinger", "Fibonacci", "VWAP", "ATR", "Candlestick", "Support", "Resistance", "Trend", "Volume", "Breakout", "Divergence", "Chart", "Liquidity", "Order Flow", "Wyckoff", "Elliott"])) {
+    return {
+      intro: `${title} is a technical-analysis lesson. It explains how price, volume, volatility and market structure can help investors and traders understand behavior on a chart.`,
+      use: "Traders use this tool to identify trend, momentum, support, resistance, volatility and possible entry or exit zones. It is most useful when combined with risk management and higher-timeframe context.",
+      important: "Technical analysis matters because markets are not only financial statements; they are also auction systems driven by buyers, sellers, liquidity and psychology.",
+      mistake: "Beginners often treat chart tools as predictions. Professionals treat them as probability tools and always define invalidation, position size and risk before entering."
+    };
+  }
+
+  if (has(title, ["Bitcoin", "Ethereum", "Crypto", "Blockchain", "Mining", "Wallets", "Smart Contracts", "Layer", "DeFi", "Staking", "Tokenomics", "Stablecoins", "On-Chain", "Halving", "Altcoin", "NFT", "Meme", "Exchange", "Rug Pulls"])) {
+    return {
+      intro: `${title} is a crypto-market lesson. It explains the technology, economic incentives, token supply, security, liquidity and adoption factors behind digital assets.`,
+      use: "Crypto investors use this knowledge to evaluate network utility, token design, liquidity, custody risk, regulation and whether market hype is supported by real activity.",
+      important: "Crypto is high-potential but high-risk. Understanding supply, unlocks, custody, protocol revenue, user activity and security is essential before allocating capital.",
+      mistake: "Beginners often buy narratives without checking supply, unlock schedules, liquidity, team incentives, exchange risk or whether the project solves a real problem."
+    };
+  }
+
+  if (has(title, ["Inflation", "Deflation", "GDP", "Federal Reserve", "ECB", "Interest Rates", "Bond", "Yield Curve", "Quantitative Easing", "Dollar", "Oil", "Commodities", "Recession", "Credit", "Banking", "Labor", "Consumer", "Macro"])) {
+    return {
+      intro: `${title} is a macroeconomic lesson. It explains how large economic forces influence stocks, bonds, commodities, currencies, crypto and investor behavior.`,
+      use: "Investors use macro analysis to understand market regimes, central-bank policy, liquidity conditions, recession risk and which asset classes may benefit or suffer.",
+      important: "Macro matters because even excellent companies can fall when liquidity tightens, rates rise or recession risk increases. It helps investors avoid analyzing companies in isolation.",
+      mistake: "Beginners often react to headlines without asking what the market expected, whether the data changes policy and which assets are actually sensitive to the change."
+    };
+  }
+
+  return {
+    intro: `${title} is a core investing lesson. It explains the concept directly and connects it to real decisions a beginner investor must eventually make.`,
+    use: "This concept is used to understand risk, value, behavior, market structure or capital allocation. It belongs in the investor's process because it improves decision quality.",
+    important: "It is important because investing is not guessing. A disciplined investor builds a framework, checks evidence and avoids emotional decisions.",
+    mistake: "Beginners often jump to action before understanding the concept, the numbers and the risk. A professional first defines the question, then analyzes the evidence."
   };
-  return base[category];
-}
-
-function institutionUse(title: string) {
-  const category = getCategory(title);
-  if (category === "macro") return "Institutions use this topic to determine the market regime: growth, inflation, policy direction, liquidity and credit conditions. They adjust equity exposure, bond duration, currency hedges and sector allocation based on how the macro picture changes.";
-  if (category === "technical" || category === "trading") return "Professional traders use this topic as part of execution and risk control. They look for liquidity, confirmation across timeframes, volatility conditions, order flow and areas where risk can be defined before capital is deployed.";
-  if (category === "crypto") return "Institutions use this topic to assess custody risk, liquidity depth, token supply, regulation, real network activity and whether the asset can fit inside a risk-managed portfolio without operational problems.";
-  if (category === "psychology") return "Institutional teams reduce behavioral mistakes through process: investment committees, pre-defined risk limits, written theses, post-trade reviews and independent challenge of assumptions.";
-  if (category === "video") return "This future video module will be used to translate theory into demonstration: screen recordings, chart annotation, company analysis walkthroughs and step-by-step examples.";
-  if (category === "literature") return "This reading module will be used as a reference system. Professional teams build shared knowledge through reports, books, checklists, models and archived investment cases.";
-  return "Institutions use this topic inside a repeatable research process. They compare the company or asset against history, competitors, valuation, market expectations, liquidity and downside risk before making an allocation.";
-}
-
-function mistakes(title: string) {
-  const category = getCategory(title);
-  if (category === "technical" || category === "trading") return "Beginners often treat a signal as a guaranteed prediction, ignore higher timeframes, place stops in obvious liquidity zones and increase risk after losses.";
-  if (category === "crypto") return "Beginners often buy because of hype, ignore token unlocks, underestimate exchange and custody risk, and confuse a rising price with real adoption.";
-  if (category === "macro") return "Beginners often think one data release explains the entire market, ignore expectations, and fail to separate nominal growth from real growth.";
-  if (category === "fundamental") return "Beginners often focus on one attractive metric, ignore cash flow, overlook debt, compare different sectors incorrectly and forget that valuation depends on growth, margins and interest rates.";
-  if (category === "video") return "The mistake is to watch passively. Video lessons should be used actively: pause, repeat the steps, write notes and apply the process to a real company or chart.";
-  if (category === "literature") return "The mistake is to read without extracting a process. A useful reading system produces notes, checklists, examples and better decisions, not just more information.";
-  return "Beginners often look for simple answers, copy other investors, ignore risk management and make decisions after price already moved strongly.";
 }
 
 function buildLessonSections(lesson: Lesson) {
   const f = formulaFor(lesson.title);
-  const description = specificDescription(lesson.title);
-  return [
-    { heading: "1. Introduction and Learning Objective", body: `${description} The purpose of this lesson is to make the topic usable in real decisions, not just recognizable as a term. By the end, the student should understand what the concept means, why it matters, which numbers or evidence to check and how to avoid the most common beginner errors.` },
-    { heading: "2. Core Concept Explained from Zero", body: `The central idea behind “${lesson.title.replace(/^Lesson \d+ — /, "")}” is to connect market theory with real economic behavior. Every asset has a story, but professional investors do not invest in stories alone. They ask what drives value, what can be measured, what risk is hidden and whether the current price already reflects the good news. This is the difference between guessing and analysis.` },
-    { heading: "3. Formula, Model or Practical Calculation", body: `${f.formula}\n\n${f.example}\n\nThe formula is not included as decoration. It is a tool for disciplined thinking. Numbers allow comparison across companies, time periods, sectors and market cycles. When a topic does not have one universal formula, the correct professional approach is to build a checklist and use evidence rather than emotion.` },
-    { heading: "4. Real Market Example", body: `Imagine comparing Apple, NVIDIA, Tesla, Berkshire Hathaway, Bitcoin and Ethereum. Each asset can be attractive for a different reason, but the analysis must match the asset. Apple may be evaluated through brand strength, free cash flow and buybacks. NVIDIA may be evaluated through growth, margins and AI demand. Tesla may require analysis of execution risk, competition and valuation. Bitcoin requires scarcity, liquidity, macro demand and custody analysis. Ethereum requires ecosystem usage, staking, fees and developer activity. The lesson topic tells you which lens to use.` },
-    { heading: "5. How Institutions Use It", body: institutionUse(lesson.title) },
-    { heading: "6. Common Beginner Mistakes", body: mistakes(lesson.title) },
-    { heading: "7. Practical Checklist", body: "1. Define the asset or market you are analyzing.\n2. Identify the main driver of value.\n3. Collect at least five facts or numbers.\n4. Compare them with history and competitors.\n5. Define the main risk.\n6. Decide what would prove your thesis wrong.\n7. Size the position according to risk, not excitement." },
-    { heading: "8. Key Takeaways", body: "• A good investment process is repeatable.\n• Price and value are not always the same.\n• One metric is never enough.\n• Risk must be defined before entering.\n• Institutions think in scenarios and probabilities.\n• Beginners improve fastest when they write down their thesis and review it later." },
-    { heading: "9. Homework", body: `Choose one real company, ETF, commodity, currency pair or crypto asset. Apply this lesson to it. Write a short thesis, list the key numbers, define the downside risk and explain what would make you avoid the investment even if the chart looks attractive.` },
+  const focus = getLessonFocus(lesson.title);
+  const sections = [
+    { heading: "1. Concept", body: focus.intro },
+    { heading: "2. Practical Use", body: focus.use },
+    { heading: "3. Why It Matters", body: focus.important },
   ];
+
+  if (f.formula) {
+    sections.push({
+      heading: "4. Formula and Calculation",
+      body: `${f.formula}\n\nDetailed example:\n${f.example}`
+    });
+  } else {
+    sections.push({
+      heading: "4. How It Works in Practice",
+      body: "This topic works as part of a decision framework. First, define the asset or market you are analyzing. Second, identify the main driver of value or risk. Third, collect evidence. Fourth, compare that evidence with history, competitors and the current market price. Finally, decide whether the potential reward is worth the risk."
+    });
+  }
+
+  sections.push(
+    { heading: "5. Real Example", body: `Apply this lesson to a real asset. For example, compare Apple, NVIDIA, Tesla, Berkshire Hathaway, Bitcoin or Ethereum only through the lens of “${lesson.title}”. The goal is not to admire the asset, but to understand what this specific topic reveals about quality, risk, valuation or timing.` },
+    { heading: "6. Institutional Perspective", body: institutionUse(lesson.title) },
+    { heading: "7. Common Beginner Mistakes", body: focus.mistake },
+    { heading: "8. Checklist", body: "• Define the asset.\n• Identify the relevant data.\n• Calculate the metric if the topic has a formula.\n• Compare with history and competitors.\n• Check whether the market price already reflects the good news.\n• Define what would prove the idea wrong.\n• Control position size before entering." }
+  );
+
+  return sections;
 }
 
 function visualType(title: string) {
